@@ -1,9 +1,12 @@
+// src/App.jsx
+// UI + wallet generation. Header is independent from card logic.
+
 import React, { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import "./App.css";
-import SiteHeader from "./components/SiteHeader"; // <-- NEW: header component
+import SiteHeader from "./components/SiteHeader"; // header component
 
-/** Draws a QR (fixed bitmap, clear before rendering) */
+/** Draw a QR (fixed bitmap, clear before rendering) */
 async function drawQR(canvas, text, px = 520) {
   if (!canvas || !text) return;
   if (canvas.width !== px) canvas.width = px;
@@ -18,7 +21,7 @@ async function drawQR(canvas, text, px = 520) {
   });
 }
 
-/** Loads the Kaspa SDK (web build) */
+/** Load Kaspa SDK (web build) */
 async function loadKaspa() {
   const candidates = [
     { js: "/wasm/web/kaspa/kaspa.js", wasm: "/wasm/web/kaspa/kaspa_bg.wasm" },
@@ -220,9 +223,7 @@ export default function App() {
     setBusy(true);
     try {
       let mnemonic = await mnemonicFromEntropy(kaspa, entropyBytes);
-      if (!mnemonic) {
-        mnemonic = kaspa.Mnemonic.random(24);
-      }
+      if (!mnemonic) mnemonic = kaspa.Mnemonic.random(24);
 
       let printable = "";
       try {
@@ -263,8 +264,8 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* NEW: Safe header block — does not affect your generator/cards */}
       <SiteHeader />
+
       <div className="card noprint" style={{ marginBottom: 16 }}>
         <h1>PaperMarty — Kaspa Paper Wallet (Folded Card)</h1>
         <p className="muted">
@@ -326,7 +327,7 @@ export default function App() {
               <div className="entropy-instr">move your mouse here</div>
             </div>
 
-            {/* Progress bar (container + track + fill) */}
+            {/* Progress bar */}
             <div className="pm-prog">
               <div className="pm-prog__track">
                 <div
@@ -338,14 +339,14 @@ export default function App() {
 
             <div className="progress-meta">
               <span>
-                {ticksRef.current} / {TARGET_TICKS} samples
+                {ticksRef.current} / {1280} samples
               </span>
               <span>{Math.floor(progress)}%</span>
             </div>
 
             <div className="entropy-actions">
               <button
-                disabled={ticksRef.current < TARGET_TICKS}
+                disabled={ticksRef.current < 1280}
                 onClick={finishCollect}
               >
                 Finish (100%)
@@ -392,7 +393,7 @@ export default function App() {
                 <div className="info">
                   <label className="label">Passphrase</label>
                   <code className="mono no-scroll">
-                    {passphrase || "(none)"}
+                    {passphrase || "(none)"}{" "}
                   </code>
                 </div>
                 <div className="info">

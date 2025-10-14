@@ -1,12 +1,56 @@
-/* ========================================================= 
-    PaperMarty — Kaspa Paper Wallet (Folded Card)
-    ========================================================= */
+/* =========================================================================
+   PaperMarty — Kaspa Paper Wallet (Folded Card)
+   >>> Styling only. Card generation/printing logic is untouched.
+   ========================================================================= */
 
+/* -------------------------------------------------------------------------
+   TOKENS (EDIT THESE)
+   ------------------------------------------------------------------------- */
 :root {
+  /* Colors */
+  --bg: #70c7ba; /* site background (teal) */
   --ink: #e7e7e7;
   --muted: #9aa1a6;
-  --bg: #0b0b0b; /* will be overridden later to #70C7BA as requested */
   --danger: #b00020;
+
+  /* High-contrast ink over teal (for header & top texts) */
+  --ink-strong: #0e2a27; /* main dark text on teal */
+  --ink-muted-strong: #214e4a; /* secondary dark text on teal */
+
+  /* Page layout */
+  --app-maxw: 960px;
+  --app-pad: 20px;
+  --app-mt: 8px; /* ↓ avant: 24px */
+
+  /* Header sizing (FULL-WIDTH header even inside .app) */
+  --header-pad-x: 48px; /* left/right padding */
+  --header-pad-y: 10px; /* ↓ avant: 26px */
+  --header-mb: 12px; /* ↓ avant: 32px */
+  --header-gap: 16px; /* gap between logo | center | socials */
+  --center-maxw: 70vw;
+
+  /* Left logo size */
+  --logo-size: 120px; /* ↓ avant: 150px */
+
+  /* ====== NEWSPAPER TITLE (Times-like serif) ====== */
+  --title-font: "Times New Roman", Times, Georgia, Garamond, Baskerville, serif;
+  --title-size: 48px; /* ↓ avant: 56px */
+  --title-weight: 700; /* bold serif = classic newspaper masthead */
+  --title-by-gap: 14px; /* space between title and byline */
+
+  /* Byline (text + small logo) */
+  --byline-size: 14px;
+  --byline-icon-size: 25px; /* marty.webp size */
+  --byline-nudge-y: -1px; /* fine vertical align */
+
+  /* Social icons (icon-only, no card) */
+  --social-gap: 14px;
+  --social-icon: 24px;
+  --social-hit: 10px;
+  --social-color: #0e2a27;
+  --social-hover: #08302b;
+
+  /* Card sheet geometry (printing) — UNCHANGED */
   --CARD_W: 53.98mm;
   --CARD_H: 85.6mm;
   --SHEET_W: calc(var(--CARD_W) * 2);
@@ -16,6 +60,9 @@
   --QR_SEED: 42mm;
 }
 
+/* -------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------- */
 * {
   box-sizing: border-box;
 }
@@ -27,23 +74,24 @@ body,
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--ink);
+  color: var(--ink-strong);
   font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
     Noto Sans, Arial, sans-serif;
 }
 
 .app {
-  max-width: 960px;
-  margin: 40px auto;
-  padding: 20px;
+  max-width: var(--app-maxw);
+  margin: var(--app-mt) auto;
+  padding: var(--app-pad);
 }
 
+/* “Top panel” (passphrase + buttons) — flat look (no dark frame) */
 .card {
-  background: #131417;
-  border: 1px solid #23262b;
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
 }
 
 .row {
@@ -51,23 +99,26 @@ body {
   grid-template-columns: 1fr auto;
   gap: 16px;
 }
-
 label {
   display: block;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--ink-muted-strong);
   margin-bottom: 6px;
 }
-
+.muted {
+  color: var(--ink-muted-strong);
+}
 input[type="text"] {
   width: 100%;
   background: #0f1113;
-  color: var(--ink);
+  color: #e7e7e7;
   border: 1px solid #2a2f35;
   border-radius: 10px;
   padding: 10px 12px;
 }
-
+input::placeholder {
+  color: #cfd6da;
+}
 button {
   cursor: pointer;
   border: 0;
@@ -79,14 +130,168 @@ button {
 }
 button.ghost {
   background: #1b1d22;
-  color: var(--ink);
+  color: #e7e7e7;
   border: 1px solid #2a2f35;
 }
-.muted {
-  color: var(--muted);
+
+/* -------------------------------------------------------------------------
+   FULL-WIDTH HEADER (title + byline inline, centered as one block)
+   ------------------------------------------------------------------------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: var(--header-pad-y) var(--header-pad-x);
+  /* Notch-safe top padding */
+  padding-top: max(var(--header-pad-y), env(safe-area-inset-top));
+  margin-bottom: var(--header-mb);
+  background: transparent;
+}
+html,
+body {
+  overflow-x: hidden;
 }
 
-/* ==================== OPEN SHEET (2 halves) ==================== */
+.site-header__inner {
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+
+  position: relative; /* allows absolute centered title */
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* left | (spacer) | right */
+  align-items: center;
+  gap: var(--header-gap);
+}
+
+/* Left: Kaspa logo */
+.site-header__left {
+  display: flex;
+  align-items: center;
+}
+.site-logo {
+  width: var(--logo-size);
+  height: var(--logo-size);
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* Center: title + byline inline, centered as one block */
+.site-header__center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  max-width: var(--center-maxw);
+}
+.title-line {
+  display: inline-flex; /* shrink-wrap to content for perfect centering */
+  align-items: baseline;
+  gap: var(--title-by-gap);
+  white-space: nowrap;
+}
+
+/* ====== Times-like newspaper title ====== */
+.site-title {
+  margin: 0;
+  font-family: var(--title-font);
+  font-size: var(--title-size);
+  font-weight: var(--title-weight);
+  line-height: 1.02;
+  letter-spacing: 0.01em; /* serif reads better with minimal tracking */
+  word-spacing: 0.04em;
+  text-transform: none; /* Title Case for readability */
+  color: var(--ink-strong);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08); /* subtle separation on teal */
+}
+
+/* Byline sits to the RIGHT of the title */
+.site-byline {
+  margin: 0;
+  font-size: var(--byline-size);
+  color: var(--ink-muted-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(var(--byline-nudge-y));
+}
+.by-icon {
+  width: var(--byline-icon-size);
+  height: var(--byline-icon-size);
+  object-fit: contain;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.1));
+}
+
+/* Right: socials (icon-only) */
+.site-header__right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--social-gap);
+}
+.social-btn {
+  --hit: var(--social-hit);
+  display: inline-grid;
+  place-items: center;
+  padding: var(--hit);
+  width: calc(var(--social-icon) + var(--hit) * 2);
+  height: calc(var(--social-icon) + var(--hit) * 2);
+  color: var(--social-color);
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  transition: transform 0.12s ease, color 0.12s ease, filter 0.12s ease;
+  outline: none;
+}
+.social-btn:hover {
+  transform: translateY(-1px) scale(1.06);
+  color: var(--social-hover);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+}
+.social-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+.social-btn:focus-visible {
+  box-shadow: 0 0 0 2px rgba(8, 48, 43, 0.35);
+}
+.social-btn svg {
+  width: var(--social-icon);
+  height: var(--social-icon);
+  display: block;
+}
+.social-btn svg path {
+  fill: currentColor;
+}
+
+/* Optional: stack on small screens */
+@media (max-width: 680px) {
+  :root {
+    --title-size: 42px;
+    --logo-size: 100px;
+    --header-pad-y: 8px;
+    --header-mb: 8px;
+    --app-mt: 6px;
+  }
+  .title-line {
+    white-space: normal;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .site-byline {
+    transform: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   OPEN SHEET (2 halves) — UNCHANGED (printable cards)
+   ------------------------------------------------------------------------- */
 .sheet.card-sheet {
   position: relative;
   width: var(--SHEET_W);
@@ -105,7 +310,6 @@ button.ghost {
     overflow: clip;
   }
 }
-
 .sheet .half {
   position: relative;
   display: flex;
@@ -113,7 +317,6 @@ button.ghost {
   justify-content: center;
   overflow: hidden;
 }
-
 .sheet .pad {
   width: calc(100% - (var(--pad) * 2));
   height: calc(100% - (var(--pad) * 2));
@@ -235,7 +438,9 @@ button.ghost {
   image-rendering: pixelated;
 }
 
-/* ==================== ENTROPY OVERLAY (full screen, no scroll) ==================== */
+/* -------------------------------------------------------------------------
+   ENTROPY OVERLAY — UNCHANGED
+   ------------------------------------------------------------------------- */
 .entropy-overlay {
   position: fixed;
   inset: 0;
@@ -246,8 +451,6 @@ button.ghost {
   justify-content: center;
   overflow: hidden;
 }
-
-/* Grid: title, text, PAD (flex), bar, meta, actions */
 .entropy-card {
   width: 96vw;
   height: 86vh;
@@ -258,15 +461,13 @@ button.ghost {
   border-radius: 14px;
   padding: 16px 18px;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
-
   display: grid;
   gap: 12px;
-  grid-template-rows: auto auto 1fr auto auto auto; /* large PAD & visible actions */
+  grid-template-rows: auto auto 1fr auto auto auto;
 }
-
 .entropy-pad {
   position: relative;
-  min-height: 52vh; /* avoid scrolling on smaller screens */
+  min-height: 52vh;
   border: 2px dashed #3a4350;
   border-radius: 12px;
   background: #0f1113;
@@ -316,7 +517,7 @@ button.ghost {
   transition: width 120ms linear;
 }
 
-/* Progress footer + actions */
+/* Footer */
 .progress-meta {
   margin-top: 4px;
   display: flex;
@@ -331,7 +532,7 @@ button.ghost {
   justify-content: flex-end;
 }
 
-/* Adjustments for low screen height */
+/* Height tweaks */
 @media (max-height: 900px) {
   .entropy-card {
     height: 84vh;
@@ -352,7 +553,9 @@ button.ghost {
   }
 }
 
-/* ==================== PRINTING ==================== */
+/* -------------------------------------------------------------------------
+   PRINT (unchanged for A4 duplex short-edge flip)
+   ------------------------------------------------------------------------- */
 @media print {
   @page {
     size: A4;
@@ -405,130 +608,27 @@ button.ghost {
     height: auto !important;
   }
 }
-
-/* =======================================================================
-   THEME OVERRIDE & HEADER STYLES (SAFE — does not touch card generation)
-   ======================================================================= */
-
-/* Global background override to requested color */
-:root {
-  --bg: #70c7ba; /* requested site-wide background color */
-}
-
-/* Header wrapper (sticky visual block with card-like style) */
+/* HEADER lisible en scroll */
 .site-header {
-  position: sticky; /* stays at top while scrolling the page content */
+  position: sticky;
   top: 0;
   z-index: 100;
-  background: transparent;
-  backdrop-filter: saturate(1.05);
-}
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: var(--header-pad-y) var(--header-pad-x);
+  padding-top: max(var(--header-pad-y), env(safe-area-inset-top));
+  margin-bottom: var(--header-mb);
 
-/* Header inner layout matches your app width and style */
-.site-header__inner {
-  max-width: 960px;
-  margin: 16px auto 20px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  background: #131417; /* same look & feel as .card */
-  border: 1px solid #23262b;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  /* >>> NEW: fond + blur pour empêcher le contenu de passer visuellement dessous */
+  background: var(--bg);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  backdrop-filter: saturate(140%) blur(8px);
 
-  display: grid;
-  grid-template-columns: 1fr minmax(0, 2fr) 1fr; /* left / center / right */
-  align-items: center;
-  gap: 12px;
-}
+  /* séparation visuelle */
+  border-bottom: 1px solid rgba(8, 48, 43, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
 
-/* Left: logo */
-.site-header__left {
-  display: flex;
-  align-items: center;
-}
-.site-logo {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
-}
-
-/* Center: title & byline */
-.site-header__center {
-  text-align: center;
-}
-.site-title {
-  margin: 0;
-  font-size: 20px;
-  line-height: 1.1;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-.site-byline {
-  margin-top: 2px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* Right: social buttons */
-.site-header__right {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
-}
-
-.social-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  font-weight: 700;
-  text-decoration: none;
-  color: var(--ink);
-  background: #1b1d22;
-  border: 1px solid #2a2f35;
-  border-radius: 10px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease,
-    border-color 0.15s ease;
-}
-.social-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
-  border-color: #33404d;
-}
-.social-btn svg {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
-/* Responsive header tweaks */
-@media (max-width: 720px) {
-  .site-title {
-    font-size: 16px;
-  }
-  .site-logo {
-    width: 36px;
-    height: 36px;
-  }
-}
-@media (max-width: 560px) {
-  .site-header__inner {
-    grid-template-columns: auto 1fr auto;
-    padding: 10px 12px;
-  }
-  .social-btn span {
-    display: none;
-  } /* keep only icons on small screens */
-  .social-btn {
-    padding: 8px;
-  }
-}
-
-/* Print: the header is hidden (uses your existing .noprint rule too) */
-@media print {
-  .site-header {
-    display: none !important;
-  }
+  /* évite des effets de stacking bizarres avec le blur */
+  isolation: isolate;
 }
