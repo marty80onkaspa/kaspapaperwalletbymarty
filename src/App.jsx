@@ -1,10 +1,11 @@
 // src/App.jsx
-// UI + wallet generation. Header is independent from card logic.
+// UI + wallet generation. Header is now inlined at the top of the page.
 
 import React, { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import "./App.css";
-import SiteHeader from "./components/SiteHeader"; // header component
+import kaspaLogo from "./assets/kaspa-logo.webp";
+import martyMark from "./assets/marty.webp";
 
 /** Draw a QR (fixed bitmap, clear before rendering) */
 async function drawQR(canvas, text, px = 520) {
@@ -88,7 +89,7 @@ export default function App() {
 
   // --------- Entropy ----------
   const [collecting, setCollecting] = useState(false);
-  const [progress, setProgress] = useState(0); // floating percentage 0..100
+  const [progress, setProgress] = useState(0); // 0..100
   const poolRef = useRef(new Uint8Array(4096));
   const offsetRef = useRef(0);
   const ticksRef = useRef(0);
@@ -160,7 +161,6 @@ export default function App() {
     const ticks = Math.min(TARGET_TICKS, ticksRef.current + 1);
     ticksRef.current = ticks;
 
-    // exact percentage (float), 100% only at 1280/1280
     const pct = Math.min(100, (ticks / TARGET_TICKS) * 100);
     setProgress(pct);
 
@@ -264,37 +264,215 @@ export default function App() {
 
   return (
     <div className="app">
-      <SiteHeader />
+      {/* === INLINE MASTHEAD (ex-SiteHeader) =============================== */}
+      <div className="masthead noprint">
+        <div className="masthead__inner">
+          {/* Left: Kaspa logo */}
+          <div className="masthead__left">
+            <img src={kaspaLogo} alt="Kaspa logo" className="site-logo" />
+          </div>
 
-      <div className="card noprint" style={{ marginBottom: 16 }}>
-        <h1>PaperMarty — Kaspa Paper Wallet (Folded Card)</h1>
-        <p className="muted">
-          Generates the card (ID-1 format). Page 1 = Outside • Page 2 = Inside.
-          For printing: A4, duplex, flip on short edge.
-        </p>
-        <div className="row" style={{ marginTop: 12 }}>
-          <div>
-            <label>BIP-39 Passphrase (optional)</label>
-            <input
-              type="text"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="(empty recommended)"
-            />
+          {/* Center: title + byline */}
+          <div className="masthead__center">
+            <div className="title-line">
+              <h1 className="site-title">Kaspa Paper Wallet Generator</h1>
+              <div className="site-byline">
+                <span>
+                  by <strong>MARTY80</strong>
+                </span>
+                <img
+                  src={martyMark}
+                  alt="MARTY80"
+                  className="by-icon"
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
-            <button disabled={!ready || busy} onClick={onGenerateClick}>
-              Generate Card
-            </button>
-            <button
-              className="ghost"
-              onClick={() => window.print()}
-              disabled={!address}
+
+          {/* Right: social icons */}
+          <nav className="masthead__right" aria-label="Social links">
+            <a
+              className="social-btn"
+              href="https://github.com/ton-compte"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              title="GitHub"
             >
-              Print
-            </button>
-          </div>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.25.82-.57v-2c-3.34.73-4.04-1.61-4.04-1.61-.55-1.41-1.35-1.79-1.35-1.79-1.1-.74.08-.73.08-.73 1.22.09 1.86 1.26 1.86 1.26 1.08 1.85 2.83 1.32 3.52 1.01.11-.8.42-1.32.77-1.62-2.67-.3-5.48-1.34-5.48-5.94 0-1.31.47-2.38 1.25-3.22-.13-.31-.54-1.56.12-3.25 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.67 1.69.26 2.94.13 3.25.78.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.64-5.49 5.93.43.37.82 1.11.82 2.25v3.34c0 .32.21.69.83.57A12 12 0 0 0 12 .5z" />
+              </svg>
+            </a>
+
+            <a
+              className="social-btn"
+              href="https://x.com/ton-compte"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X (Twitter)"
+              title="X (Twitter)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18.9 2H22l-7.03 8.03L23.5 22h-6.9l-5.4-7.06L4.9 22H2l7.5-8.57L.5 2h6.9l4.88 6.38L18.9 2Zm-2.42 18h2.29L7.64 4h-2.3l11.14 16Z" />
+              </svg>
+            </a>
+          </nav>
         </div>
+      </div>
+
+      {/* === 3-COLUMN LAYOUT ============================================== */}
+      <div className="layout3">
+        {/* STEP 1 — BRANDING (rail vertical 90°) */}
+        <aside className="col col-left noprint">
+          <section className="step-card step1">
+            <div className="step-head">
+              <span className="step-kicker">STEP 1</span>
+              <h2 className="step-title">Branding</h2>
+            </div>
+            <div className="step-body">
+              <div className="brand-logo">
+                <div className="logo-ph">Logo</div>
+              </div>
+
+              <label className="brand-label">Wallet name</label>
+              <input
+                type="text"
+                placeholder="ex: PaperMarty"
+                className="brand-input"
+                disabled
+                title="À brancher plus tard"
+              />
+              <p className="muted" style={{ marginTop: 8 }}>
+                (On choisira l’image et le nom plus tard)
+              </p>
+            </div>
+          </section>
+        </aside>
+
+        {/* STEP 2 — GÉNÉRATION (rail vertical 90°) */}
+        <main className="col col-center noprint">
+          <section className="step-card step2">
+            <div className="step-head">
+              <span className="step-kicker">STEP 2</span>
+              <h2 className="step-title">Génération</h2>
+            </div>
+            <div className="step-body">
+              <p className="muted">
+                Page 1 = Outside • Page 2 = Inside • Impression A4, recto/verso,
+                flip court.
+              </p>
+
+              <div className="row" style={{ marginTop: 12 }}>
+                <div>
+                  <label>BIP-39 Passphrase (optional)</label>
+                  <input
+                    type="text"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    placeholder="(empty recommended)"
+                  />
+                </div>
+                <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
+                  <button disabled={!ready || busy} onClick={onGenerateClick}>
+                    Generate Card
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        {/* STEP 3 — PREVIEW + PRINT (rail vertical + bouton latéral) */}
+        <section className="col col-right">
+          <section className="step-card step3">
+            {/* Rail vertical gauche : titre tourné */}
+            <div className="step-head">
+              <span className="step-kicker">STEP 3</span>
+              <h2 className="step-title">Aperçu final</h2>
+            </div>
+
+            {/* Corps : les deux cartes */}
+            <div className="step-body">
+              <div className={`preview-panel ${address ? "" : "is-empty"}`}>
+                <div className="preview-stage">
+                  {/* ================= PAGE 1 — OUTSIDE ================= */}
+                  <div className="preview-sheet">
+                    <div className="sheet card-sheet outside">
+                      <div className="half back">
+                        <div className="pad pad-back">
+                          <canvas ref={pubBackQRRef} className="qr-public" />
+                          <div className="addrBlock addr-back">
+                            <code className="addr">{address || "…"}</code>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="half cover">
+                        <div className="pad pad-cover">
+                          <div className="logo">
+                            PAPER<span>MARTY</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="fold-line" aria-hidden="true" />
+                    </div>
+                  </div>
+
+                  {/* ================= PAGE 2 — INSIDE ================= */}
+                  <div className="preview-sheet">
+                    <div className="sheet card-sheet inside">
+                      <div className="half secret-left">
+                        <div className="pad pad-secret">
+                          <div className="label danger">
+                            SECRET — DO NOT SHARE
+                          </div>
+                          <div className="info">
+                            <label className="label">Seed (24 words)</label>
+                            <code className="mono no-scroll">
+                              {words || "…"}
+                            </code>
+                          </div>
+                          <div className="info">
+                            <label className="label">Passphrase</label>
+                            <code className="mono no-scroll">
+                              {passphrase || "(none)"}{" "}
+                            </code>
+                          </div>
+                          <div className="info">
+                            <label className="label">Private Key (hex)</label>
+                            <code className="mono no-scroll">
+                              {privHex || "…"}
+                            </code>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="half secret-right">
+                        <div className="pad">
+                          <div className="label">QR — Seed (24 words)</div>
+                          <canvas ref={secQRRef} className="qr-seed" />
+                        </div>
+                      </div>
+                      <div className="fold-line" aria-hidden="true" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rail droit : bouton print à côté des cartes */}
+            <div className="step-side-print">
+              <button
+                className="ghost"
+                onClick={() => window.print()}
+                disabled={!address}
+                title={address ? "Imprimer" : "Génère d’abord la carte"}
+              >
+                Print
+              </button>
+            </div>
+          </section>
+        </section>
       </div>
 
       {/* Entropy collection Overlay */}
@@ -357,60 +535,6 @@ export default function App() {
             </div>
           </div>
         </div>
-      )}
-
-      {address && (
-        <>
-          {/* ================= PAGE 1 — OUTSIDE ================= */}
-          <div className="sheet card-sheet outside">
-            <div className="half back">
-              <div className="pad pad-back">
-                <canvas ref={pubBackQRRef} className="qr-public" />
-                <div className="addrBlock addr-back">
-                  <code className="addr">{address}</code>
-                </div>
-              </div>
-            </div>
-            <div className="half cover">
-              <div className="pad pad-cover">
-                <div className="logo">
-                  PAPER<span>MARTY</span>
-                </div>
-              </div>
-            </div>
-            <div className="fold-line" aria-hidden="true" />
-          </div>
-
-          {/* ================= PAGE 2 — INSIDE ================= */}
-          <div className="sheet card-sheet inside">
-            <div className="half secret-left">
-              <div className="pad pad-secret">
-                <div className="label danger">SECRET — DO NOT SHARE</div>
-                <div className="info">
-                  <label className="label">Seed (24 words)</label>
-                  <code className="mono no-scroll">{words}</code>
-                </div>
-                <div className="info">
-                  <label className="label">Passphrase</label>
-                  <code className="mono no-scroll">
-                    {passphrase || "(none)"}{" "}
-                  </code>
-                </div>
-                <div className="info">
-                  <label className="label">Private Key (hex)</label>
-                  <code className="mono no-scroll">{privHex}</code>
-                </div>
-              </div>
-            </div>
-            <div className="half secret-right">
-              <div className="pad">
-                <div className="label">QR — Seed (24 words)</div>
-                <canvas ref={secQRRef} className="qr-seed" />
-              </div>
-            </div>
-            <div className="fold-line" aria-hidden="true" />
-          </div>
-        </>
       )}
     </div>
   );

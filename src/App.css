@@ -1,6 +1,5 @@
 /* =========================================================================
    PaperMarty — Kaspa Paper Wallet (Folded Card)
-   >>> Styling only. Card generation/printing logic is untouched.
    ========================================================================= */
 
 /* -------------------------------------------------------------------------
@@ -8,49 +7,57 @@
    ------------------------------------------------------------------------- */
 :root {
   /* Colors */
-  --bg: #70c7ba; /* site background (teal) */
+  --bg: #70c7ba;
   --ink: #e7e7e7;
   --muted: #9aa1a6;
   --danger: #b00020;
 
-  /* High-contrast ink over teal (for header & top texts) */
-  --ink-strong: #0e2a27; /* main dark text on teal */
-  --ink-muted-strong: #214e4a; /* secondary dark text on teal */
+  /* High-contrast ink over teal */
+  --ink-strong: #0e2a27;
+  --ink-muted-strong: #214e4a;
 
-  /* Page layout */
-  --app-maxw: 960px;
+  /* App / masthead */
   --app-pad: 20px;
-  --app-mt: 8px; /* ↓ avant: 24px */
-
-  /* Header sizing (FULL-WIDTH header even inside .app) */
-  --header-pad-x: 48px; /* left/right padding */
-  --header-pad-y: 10px; /* ↓ avant: 26px */
-  --header-mb: 12px; /* ↓ avant: 32px */
-  --header-gap: 16px; /* gap between logo | center | socials */
-  --center-maxw: 70vw;
-
-  /* Left logo size */
-  --logo-size: 120px; /* ↓ avant: 150px */
-
-  /* ====== NEWSPAPER TITLE (Times-like serif) ====== */
-  --title-font: "Times New Roman", Times, Georgia, Garamond, Baskerville, serif;
-  --title-size: 48px; /* ↓ avant: 56px */
-  --title-weight: 700; /* bold serif = classic newspaper masthead */
-  --title-by-gap: 14px; /* space between title and byline */
-
-  /* Byline (text + small logo) */
-  --byline-size: 14px;
-  --byline-icon-size: 25px; /* marty.webp size */
-  --byline-nudge-y: -1px; /* fine vertical align */
-
-  /* Social icons (icon-only, no card) */
+  --app-mt: 8px;
+  --header-pad-x: 48px;
+  --header-pad-y: 6px;
+  --header-mb: 10px;
+  --header-gap: 10px;
+  --center-maxw: 64vw;
   --social-gap: 14px;
-  --social-icon: 24px;
-  --social-hit: 10px;
-  --social-color: #0e2a27;
-  --social-hover: #08302b;
 
-  /* Card sheet geometry (printing) — UNCHANGED */
+  /* Typography */
+  --title-font: "Times New Roman", Times, Georgia, Garamond, Baskerville, serif;
+  --title-size: 34px;
+  --title-weight: 700;
+  --title-by-gap: 6px;
+  --byline-size: 12px;
+  --byline-icon-size: 16px;
+
+  /* Logos / socials */
+  --logo-size: 110px;
+  --social-icon: 32px;
+  --social-hit: 8px;
+
+  /* Grid 3 colonnes */
+  --col-min: 320px;
+  --col-gap: 24px;
+
+  /* Hauteur zone principale (réserve pour footer, etc.) */
+  --masthead-approx: 84px;
+  --footer-reserve: 120px; /* ajuste pour laisser +/– de place au footer */
+  --cards-extra-h: 40px; /* bonus de hauteur si besoin */
+  --step-pad-y: 20px; /* padding vertical des cartes */
+
+  /* STEP 3 preview */
+  --preview-gap: 10px;
+  --preview-scale: 1.06; /* ←← MODIFIE ICI pour la TAILLE des 2 cartes */
+
+  /* STEP 3 rails */
+  --step3-rail-w: 44px;
+  --step3-print-w: 60px;
+
+  /* Card sheet geometry (print) */
   --CARD_W: 53.98mm;
   --CARD_H: 85.6mm;
   --SHEET_W: calc(var(--CARD_W) * 2);
@@ -58,6 +65,20 @@
   --pad: 3mm;
   --QR_PUBLIC: 40mm;
   --QR_SEED: 42mm;
+}
+
+/* Responsive tweaks */
+@media (max-width: 680px) {
+  :root {
+    --title-size: 30px;
+    --byline-size: 11px;
+    --byline-icon-size: 14px;
+    --logo-size: 56px;
+    --social-icon: 20px;
+    --social-hit: 6px;
+    --header-pad-y: 4px;
+    --header-mb: 8px;
+  }
 }
 
 /* -------------------------------------------------------------------------
@@ -68,9 +89,14 @@
 }
 html,
 body,
-#root {
+#root,
+.app {
   height: 100%;
 }
+html,
+body {
+  overflow: hidden;
+} /* pas de scroll page */
 body {
   margin: 0;
   background: var(--bg);
@@ -78,22 +104,14 @@ body {
   font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
     Noto Sans, Arial, sans-serif;
 }
-
 .app {
-  max-width: var(--app-maxw);
-  margin: var(--app-mt) auto;
-  padding: var(--app-pad);
+  width: 100%;
+  margin: var(--app-mt) 0;
+  padding-left: max(var(--app-pad), env(safe-area-inset-left));
+  padding-right: max(var(--app-pad), env(safe-area-inset-right));
 }
 
-/* “Top panel” (passphrase + buttons) — flat look (no dark frame) */
-.card {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
-}
-
+/* Inputs / buttons */
 .row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -135,45 +153,27 @@ button.ghost {
 }
 
 /* -------------------------------------------------------------------------
-   FULL-WIDTH HEADER (title + byline inline, centered as one block)
+   Masthead (inline)
    ------------------------------------------------------------------------- */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+.masthead {
   padding: var(--header-pad-y) var(--header-pad-x);
-  /* Notch-safe top padding */
-  padding-top: max(var(--header-pad-y), env(safe-area-inset-top));
   margin-bottom: var(--header-mb);
-  background: transparent;
 }
-html,
-body {
-  overflow-x: hidden;
-}
-
-.site-header__inner {
-  width: 100%;
-  margin: 0;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  border-radius: 0;
-
-  position: relative; /* allows absolute centered title */
+.masthead__inner {
   display: grid;
-  grid-template-columns: auto 1fr auto; /* left | (spacer) | right */
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--header-gap);
+  position: relative;
 }
-
-/* Left: Kaspa logo */
-.site-header__left {
+.masthead__left {
   display: flex;
   align-items: center;
+}
+.masthead__right {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--social-gap);
 }
 .site-logo {
   width: var(--logo-size);
@@ -181,9 +181,7 @@ body {
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
 }
-
-/* Center: title + byline inline, centered as one block */
-.site-header__center {
+.masthead__center {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -191,27 +189,22 @@ body {
   max-width: var(--center-maxw);
 }
 .title-line {
-  display: inline-flex; /* shrink-wrap to content for perfect centering */
+  display: inline-flex;
   align-items: baseline;
   gap: var(--title-by-gap);
   white-space: nowrap;
 }
-
-/* ====== Times-like newspaper title ====== */
 .site-title {
   margin: 0;
   font-family: var(--title-font);
   font-size: var(--title-size);
   font-weight: var(--title-weight);
-  line-height: 1.02;
-  letter-spacing: 0.01em; /* serif reads better with minimal tracking */
+  line-height: 1;
+  letter-spacing: 0.01em;
   word-spacing: 0.04em;
-  text-transform: none; /* Title Case for readability */
   color: var(--ink-strong);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08); /* subtle separation on teal */
+  text-shadow: none;
 }
-
-/* Byline sits to the RIGHT of the title */
 .site-byline {
   margin: 0;
   font-size: var(--byline-size);
@@ -219,21 +212,12 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transform: translateY(var(--byline-nudge-y));
 }
 .by-icon {
   width: var(--byline-icon-size);
   height: var(--byline-icon-size);
   object-fit: contain;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.1));
-}
-
-/* Right: socials (icon-only) */
-.site-header__right {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--social-gap);
 }
 .social-btn {
   --hit: var(--social-hit);
@@ -242,7 +226,7 @@ body {
   padding: var(--hit);
   width: calc(var(--social-icon) + var(--hit) * 2);
   height: calc(var(--social-icon) + var(--hit) * 2);
-  color: var(--social-color);
+  color: #0e2a27;
   text-decoration: none;
   background: transparent;
   border: 0;
@@ -252,7 +236,7 @@ body {
 }
 .social-btn:hover {
   transform: translateY(-1px) scale(1.06);
-  color: var(--social-hover);
+  color: #08302b;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
 }
 .social-btn:active {
@@ -270,27 +254,140 @@ body {
   fill: currentColor;
 }
 
-/* Optional: stack on small screens */
-@media (max-width: 680px) {
-  :root {
-    --title-size: 42px;
-    --logo-size: 100px;
-    --header-pad-y: 8px;
-    --header-mb: 8px;
-    --app-mt: 6px;
-  }
-  .title-line {
-    white-space: normal;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .site-byline {
-    transform: none;
-  }
+/* -------------------------------------------------------------------------
+   3-COLUMN LAYOUT
+   ------------------------------------------------------------------------- */
+.layout3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(var(--col-min), 1fr));
+  gap: var(--col-gap);
+  align-items: stretch;
+  height: calc(
+    100vh - var(--masthead-approx) - var(--footer-reserve) +
+      var(--cards-extra-h)
+  );
+}
+.col {
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+}
+.step-card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--step-pad-y) 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(8, 48, 43, 0.14);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+  backdrop-filter: saturate(130%) blur(6px);
+}
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.step-kicker {
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--ink-strong);
+  background: rgba(8, 48, 43, 0.08);
+  border: 1px solid rgba(8, 48, 43, 0.15);
+}
+.step-title {
+  margin: 0;
+  font-family: var(--title-font);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink-strong);
+}
+.step-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.step-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* STEP 3 rail vertical + bouton print */
+.step-card.step3 {
+  display: grid;
+  grid-template-columns: var(--step3-rail-w) 1fr var(--step3-print-w);
+  grid-template-areas: "rail body print";
+  gap: 0;
+}
+.step-card.step3 .step-head {
+  grid-area: rail;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-orientation: mixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.step-card.step3 .step-kicker {
+  font-size: 14px;
+  padding: 4px 6px;
+}
+.step-card.step3 .step-title {
+  font-size: 16px;
+}
+.step-card.step3 .step-body {
+  grid-area: body;
+  overflow: hidden;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.step-card.step3 .step-side-print {
+  grid-area: print;
+  display: grid;
+  place-items: center;
+  padding-left: 6px;
+}
+.step-card.step3 .step-side-print .ghost {
+  writing-mode: horizontal-tb;
+  transform: none;
+  padding: 10px 14px;
 }
 
 /* -------------------------------------------------------------------------
-   OPEN SHEET (2 halves) — UNCHANGED (printable cards)
+   STEP 3 PREVIEW (scale unique via --preview-scale)
+   ------------------------------------------------------------------------- */
+.preview-panel .sheet.card-sheet {
+  margin: 0;
+} /* pas d'espace parasite */
+.preview-stage {
+  display: grid;
+  gap: var(--preview-gap);
+  justify-items: center;
+  align-content: start;
+}
+.preview-sheet {
+  height: calc(
+    var(--SHEET_H) * var(--preview-scale)
+  ); /* réserve la bonne hauteur */
+  display: grid;
+  place-items: center;
+}
+.preview-sheet > .sheet {
+  transform: scale(var(--preview-scale));
+  transform-origin: top center;
+}
+
+/* -------------------------------------------------------------------------
+   OPEN SHEET (printable cards)
    ------------------------------------------------------------------------- */
 .sheet.card-sheet {
   position: relative;
@@ -330,8 +427,6 @@ body {
 .sheet .pad > * {
   max-width: 100%;
 }
-
-/* Fold line */
 .fold-line {
   position: absolute;
   left: calc(50% - 0.25mm);
@@ -348,8 +443,6 @@ body {
   opacity: 0.7;
   pointer-events: none;
 }
-
-/* Cover (right) */
 .pad-cover {
   justify-content: center;
 }
@@ -364,8 +457,6 @@ body {
 .cover .logo span {
   color: #2a6df4;
 }
-
-/* Back (left) */
 .pad-back {
   justify-content: center;
   align-items: center;
@@ -439,7 +530,7 @@ body {
 }
 
 /* -------------------------------------------------------------------------
-   ENTROPY OVERLAY — UNCHANGED
+   ENTROPY OVERLAY
    ------------------------------------------------------------------------- */
 .entropy-overlay {
   position: fixed;
@@ -516,8 +607,6 @@ body {
   box-shadow: 0 0 12px rgba(48, 165, 255, 0.45);
   transition: width 120ms linear;
 }
-
-/* Footer */
 .progress-meta {
   margin-top: 4px;
   display: flex;
@@ -532,29 +621,8 @@ body {
   justify-content: flex-end;
 }
 
-/* Height tweaks */
-@media (max-height: 900px) {
-  .entropy-card {
-    height: 84vh;
-  }
-  .entropy-pad {
-    min-height: 48vh;
-  }
-}
-@media (max-height: 750px) {
-  .entropy-card {
-    height: 82vh;
-  }
-  .entropy-pad {
-    min-height: 42vh;
-  }
-  .pm-prog__track {
-    height: 18px;
-  }
-}
-
 /* -------------------------------------------------------------------------
-   PRINT (unchanged for A4 duplex short-edge flip)
+   PRINT (A4 duplex short-edge flip)
    ------------------------------------------------------------------------- */
 @media print {
   @page {
@@ -568,13 +636,10 @@ body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .app .card,
-  .app .muted,
   .noprint,
   .entropy-overlay {
     display: none !important;
   }
-
   .sheet.card-sheet {
     margin: 0 auto;
     width: var(--SHEET_W) !important;
@@ -585,7 +650,6 @@ body {
   .sheet.card-sheet + .sheet.card-sheet {
     page-break-before: always;
   }
-
   .pad-secret {
     padding-top: 1.5mm;
   }
@@ -608,27 +672,74 @@ body {
     height: auto !important;
   }
 }
-/* HEADER lisible en scroll */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  padding: var(--header-pad-y) var(--header-pad-x);
-  padding-top: max(var(--header-pad-y), env(safe-area-inset-top));
-  margin-bottom: var(--header-mb);
+/* ===== STEP 1 & STEP 2 : rail vertical à gauche (90°) ===== */
+:root {
+  --step-rail-w: 44px;
+} /* largeur du rail (tu peux mettre 38–54px) */
 
-  /* >>> NEW: fond + blur pour empêcher le contenu de passer visuellement dessous */
-  background: var(--bg);
-  -webkit-backdrop-filter: saturate(140%) blur(8px);
-  backdrop-filter: saturate(140%) blur(8px);
+.step-card.step1,
+.step-card.step2 {
+  display: grid;
+  grid-template-columns: var(--step-rail-w) 1fr;
+  grid-template-areas: "rail body";
+  gap: 0;
+  align-items: stretch;
+}
 
-  /* séparation visuelle */
-  border-bottom: 1px solid rgba(8, 48, 43, 0.12);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+.step-card.step1 .step-head,
+.step-card.step2 .step-head {
+  grid-area: rail;
+  writing-mode: vertical-lr; /* 90° lisible de haut → bas */
+  text-orientation: mixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 0; /* on enlève la marge basse standard */
+}
 
-  /* évite des effets de stacking bizarres avec le blur */
-  isolation: isolate;
+/* Si tu préfères l’autre sens (bas → haut), remplace ci-dessus par :
+   writing-mode: vertical-rl; transform: rotate(180deg);  */
+
+.step-card.step1 .step-body,
+.step-card.step2 .step-body {
+  grid-area: body;
+  overflow: hidden; /* pas de scroll visible */
+  padding: 0 8px;
+}
+
+/* Taille/rythme du libellé vertical */
+.step-card.step1 .step-kicker,
+.step-card.step2 .step-kicker {
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
+.step-card.step1 .step-title,
+.step-card.step2 .step-title {
+  font-size: 16px;
+}
+/* STEP 1 & STEP 2 — même sens que STEP 3 (bas → haut, lettres lisibles) */
+.step-card.step1 .step-head,
+.step-card.step2 .step-head {
+  writing-mode: vertical-rl; /* comme STEP 3 */
+  transform: rotate(180deg); /* retourne le flux pour lire de bas → haut */
+  text-orientation: mixed;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+/* (optionnel) tailles du libellé vertical pour l’harmonie avec STEP 3 */
+.step-card.step1 .step-kicker,
+.step-card.step2 .step-kicker {
+  font-size: 14px;
+  padding: 4px 6px;
+}
+
+.step-card.step1 .step-title,
+.step-card.step2 .step-title {
+  font-size: 16px;
 }
