@@ -1,0 +1,407 @@
+/* =========================================================
+    PaperMarty — Kaspa Paper Wallet (Folded Card)
+    ========================================================= */
+
+:root {
+  --ink: #e7e7e7;
+  --muted: #9aa1a6;
+  --bg: #0b0b0b;
+  --danger: #b00020;
+  --CARD_W: 53.98mm;
+  --CARD_H: 85.6mm;
+  --SHEET_W: calc(var(--CARD_W) * 2);
+  --SHEET_H: var(--CARD_H);
+  --pad: 3mm;
+  --QR_PUBLIC: 40mm;
+  --QR_SEED: 42mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
+    Noto Sans, Arial, sans-serif;
+}
+
+.app {
+  max-width: 960px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.card {
+  background: #131417;
+  border: 1px solid #23262b;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input[type="text"] {
+  width: 100%;
+  background: #0f1113;
+  color: var(--ink);
+  border: 1px solid #2a2f35;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #2a6df4;
+  color: #fff;
+  font-weight: 700;
+}
+button.ghost {
+  background: #1b1d22;
+  color: var(--ink);
+  border: 1px solid #2a2f35;
+}
+.muted {
+  color: var(--muted);
+}
+
+/* ==================== OPEN SHEET (2 halves) ==================== */
+.sheet.card-sheet {
+  position: relative;
+  width: var(--SHEET_W);
+  height: var(--SHEET_H);
+  margin: 16px auto;
+  background: #fff;
+  color: #111;
+  border: 1px solid #ddd;
+  border-radius: 3mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+@supports (overflow: clip) {
+  .sheet.card-sheet {
+    overflow: clip;
+  }
+}
+
+.sheet .half {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.sheet .pad {
+  width: calc(100% - (var(--pad) * 2));
+  height: calc(100% - (var(--pad) * 2));
+  padding: var(--pad);
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+  align-items: center;
+  justify-content: center;
+}
+.sheet .pad > * {
+  max-width: 100%;
+}
+
+/* Fold line */
+.fold-line {
+  position: absolute;
+  left: calc(50% - 0.25mm);
+  top: 0;
+  width: 0.5mm;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #aaa,
+    #aaa 2mm,
+    transparent 2mm,
+    transparent 4mm
+  );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Cover (right) */
+.pad-cover {
+  justify-content: center;
+}
+.cover .logo {
+  font-weight: 900;
+  font-size: 10.5mm;
+  letter-spacing: 0.5mm;
+  line-height: 1;
+  text-align: center;
+  color: #111;
+}
+.cover .logo span {
+  color: #2a6df4;
+}
+
+/* Back (left) */
+.pad-back {
+  justify-content: center;
+  align-items: center;
+  gap: 3mm;
+  text-align: center;
+}
+.qr-public {
+  display: block;
+  width: var(--QR_PUBLIC);
+  aspect-ratio: 1/1;
+  height: auto !important;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 2mm;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+.addrBlock .addr {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 2.6mm;
+  word-break: break-all;
+}
+
+/* Inside (seed) */
+.label {
+  font-size: 2.6mm;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.3mm;
+}
+.label.danger {
+  color: var(--danger);
+  font-weight: 800;
+}
+.info {
+  width: 100%;
+}
+.mono {
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 2.3mm;
+  line-height: 1.25;
+  background: #f7f7f7;
+  padding: 1.2mm;
+  border-radius: 2mm;
+  border: 1px solid #eee;
+}
+.no-scroll {
+  max-height: none !important;
+  overflow: visible !important;
+}
+.pad-secret {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 2mm;
+  padding-top: 2mm;
+}
+.qr-seed {
+  display: block;
+  width: var(--QR_SEED);
+  aspect-ratio: 1/1;
+  height: auto !important;
+  border: 1px solid #eee;
+  border-radius: 2mm;
+  background: #fff;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* ==================== ENTROPY OVERLAY (full screen, no scroll) ==================== */
+.entropy-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Grid: title, text, PAD (flex), bar, meta, actions */
+.entropy-card {
+  width: 96vw;
+  height: 86vh;
+  max-height: 860px;
+  background: #111418;
+  color: #e7e7e7;
+  border: 1px solid #27303a;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+
+  display: grid;
+  gap: 12px;
+  grid-template-rows: auto auto 1fr auto auto auto; /* Large PAD, visible buttons */
+}
+
+.entropy-pad {
+  position: relative;
+  min-height: 52vh; /* ↓ more compact to avoid scroll */
+  border: 2px dashed #3a4350;
+  border-radius: 12px;
+  background: #0f1113;
+  margin: 8px 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  cursor: crosshair;
+}
+.entropy-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.entropy-instr {
+  position: relative;
+  z-index: 2;
+  color: #9fb1c4;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+/* Progress bar */
+.pm-prog {
+  margin-top: 4px;
+}
+.pm-prog__track {
+  position: relative;
+  width: 100%;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #1d232a;
+  border: 1px solid #2c3440;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.pm-prog__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #2a6df4, #22d8a2);
+  box-shadow: 0 0 12px rgba(48, 165, 255, 0.45);
+  transition: width 120ms linear;
+}
+
+/* Progress footer + actions */
+.progress-meta {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  color: #9aa1a6;
+  font-size: 13px;
+}
+.entropy-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Adjustments for low screen height */
+@media (max-height: 900px) {
+  .entropy-card {
+    height: 84vh;
+  }
+  .entropy-pad {
+    min-height: 48vh;
+  }
+}
+@media (max-height: 750px) {
+  .entropy-card {
+    height: 82vh;
+  }
+  .entropy-pad {
+    min-height: 42vh;
+  }
+  .pm-prog__track {
+    height: 18px;
+  }
+}
+
+/* ==================== PRINTING ==================== */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+  html,
+  body {
+    background: #fff;
+    color: #111;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .app .card,
+  .app .muted,
+  .noprint,
+  .entropy-overlay {
+    display: none !important;
+  }
+
+  .sheet.card-sheet {
+    margin: 0 auto;
+    width: var(--SHEET_W) !important;
+    height: var(--SHEET_H) !important;
+    page-break-inside: avoid;
+    overflow: hidden;
+  }
+  .sheet.card-sheet + .sheet.card-sheet {
+    page-break-before: always;
+  }
+
+  .pad-secret {
+    padding-top: 1.5mm;
+  }
+  .cover .logo {
+    font-size: 10mm;
+  }
+  .label,
+  .addrBlock .addr,
+  .mono {
+    font-size: 2.3mm;
+  }
+  .qr-public {
+    width: 38mm;
+    aspect-ratio: 1/1;
+    height: auto !important;
+  }
+  .qr-seed {
+    width: min(40mm, var(--QR_SEED));
+    aspect-ratio: 1/1;
+    height: auto !important;
+  }
+}
