@@ -1,11 +1,11 @@
-/* =========================================================
+/* ========================================================= 
     PaperMarty — Kaspa Paper Wallet (Folded Card)
     ========================================================= */
 
 :root {
   --ink: #e7e7e7;
   --muted: #9aa1a6;
-  --bg: #0b0b0b;
+  --bg: #0b0b0b; /* will be overridden later to #70C7BA as requested */
   --danger: #b00020;
   --CARD_W: 53.98mm;
   --CARD_H: 85.6mm;
@@ -261,12 +261,12 @@ button.ghost {
 
   display: grid;
   gap: 12px;
-  grid-template-rows: auto auto 1fr auto auto auto; /* Large PAD, visible buttons */
+  grid-template-rows: auto auto 1fr auto auto auto; /* large PAD & visible actions */
 }
 
 .entropy-pad {
   position: relative;
-  min-height: 52vh; /* ↓ more compact to avoid scroll */
+  min-height: 52vh; /* avoid scrolling on smaller screens */
   border: 2px dashed #3a4350;
   border-radius: 12px;
   background: #0f1113;
@@ -403,5 +403,132 @@ button.ghost {
     width: min(40mm, var(--QR_SEED));
     aspect-ratio: 1/1;
     height: auto !important;
+  }
+}
+
+/* =======================================================================
+   THEME OVERRIDE & HEADER STYLES (SAFE — does not touch card generation)
+   ======================================================================= */
+
+/* Global background override to requested color */
+:root {
+  --bg: #70c7ba; /* requested site-wide background color */
+}
+
+/* Header wrapper (sticky visual block with card-like style) */
+.site-header {
+  position: sticky; /* stays at top while scrolling the page content */
+  top: 0;
+  z-index: 100;
+  background: transparent;
+  backdrop-filter: saturate(1.05);
+}
+
+/* Header inner layout matches your app width and style */
+.site-header__inner {
+  max-width: 960px;
+  margin: 16px auto 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #131417; /* same look & feel as .card */
+  border: 1px solid #23262b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 2fr) 1fr; /* left / center / right */
+  align-items: center;
+  gap: 12px;
+}
+
+/* Left: logo */
+.site-header__left {
+  display: flex;
+  align-items: center;
+}
+.site-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+/* Center: title & byline */
+.site-header__center {
+  text-align: center;
+}
+.site-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.site-byline {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Right: social buttons */
+.site-header__right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink);
+  background: #1b1d22;
+  border: 1px solid #2a2f35;
+  border-radius: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.social-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  border-color: #33404d;
+}
+.social-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Responsive header tweaks */
+@media (max-width: 720px) {
+  .site-title {
+    font-size: 16px;
+  }
+  .site-logo {
+    width: 36px;
+    height: 36px;
+  }
+}
+@media (max-width: 560px) {
+  .site-header__inner {
+    grid-template-columns: auto 1fr auto;
+    padding: 10px 12px;
+  }
+  .social-btn span {
+    display: none;
+  } /* keep only icons on small screens */
+  .social-btn {
+    padding: 8px;
+  }
+}
+
+/* Print: the header is hidden (uses your existing .noprint rule too) */
+@media print {
+  .site-header {
+    display: none !important;
   }
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import "./App.css";
+import SiteHeader from "./components/SiteHeader"; // <-- NEW: header component
 
 /** Draws a QR (fixed bitmap, clear before rendering) */
 async function drawQR(canvas, text, px = 520) {
@@ -262,6 +263,8 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* NEW: Safe header block — does not affect your generator/cards */}
+      <SiteHeader />
       <div className="card noprint" style={{ marginBottom: 16 }}>
         <h1>PaperMarty — Kaspa Paper Wallet (Folded Card)</h1>
         <p className="muted">
