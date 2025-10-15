@@ -75,6 +75,17 @@ async function sha256(bytes) {
   return new Uint8Array(buf);
 }
 
+/** stringify mnemonic robustly */
+function printableOf(mnemonic) {
+  try {
+    const s = mnemonic.toString();
+    const maybe = JSON.parse(s);
+    return maybe?.phrase || s;
+  } catch {
+    return mnemonic.toString();
+  }
+}
+
 export default function App() {
   const [kaspa, setKaspa] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -87,7 +98,7 @@ export default function App() {
   const pubBackQRRef = useRef(null);
   const secQRRef = useRef(null);
 
-  // --------- Entropy ----------
+  // --------- Entropy (inline in STEP 2) ----------
   const [collecting, setCollecting] = useState(false);
   const [progress, setProgress] = useState(0); // 0..100
   const poolRef = useRef(new Uint8Array(4096));
@@ -95,45 +106,15 @@ export default function App() {
   const ticksRef = useRef(0);
   const TARGET_TICKS = 1280;
 
-  // Trace
-  const padRef = useRef(null);
-  const traceRef = useRef(null);
-  const lastPtRef = useRef(null);
-
-  function resizeTraceCanvas() {
-    const pad = padRef.current,
-      cvs = traceRef.current;
-    if (!pad || !cvs) return;
-    const rect = pad.getBoundingClientRect();
-    cvs.width = Math.max(10, Math.floor(rect.width));
-    cvs.height = Math.max(10, Math.floor(rect.height));
-    const ctx = cvs.getContext("2d");
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = "#39d0ff";
-  }
-
-  useEffect(() => {
-    if (!collecting) return;
-    resizeTraceCanvas();
-    const onResize = () => resizeTraceCanvas();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [collecting]);
-
+  // === Entropy helpers (no canvas trace, just sampling) ===
   function resetEntropy() {
     poolRef.current.fill(0);
     offsetRef.current = 0;
     ticksRef.current = 0;
     setProgress(0);
-    lastPtRef.current = null;
-    requestAnimationFrame(() => resizeTraceCanvas());
   }
 
   function addEntropySample(ev) {
-    // 1) pool
     const r = new Uint32Array(1);
     crypto.getRandomValues(r);
     const t = Math.floor(performance.now() * 1000);
@@ -160,41 +141,92 @@ export default function App() {
 
     const ticks = Math.min(TARGET_TICKS, ticksRef.current + 1);
     ticksRef.current = ticks;
-
-    const pct = Math.min(100, (ticks / TARGET_TICKS) * 100);
-    setProgress(pct);
-
-    // 2) trace
-    const pad = padRef.current,
-      cvs = traceRef.current;
-    if (!pad || !cvs) return;
-    const rect = pad.getBoundingClientRect();
-    const cx = ev.clientX - rect.left,
-      cy = ev.clientY - rect.top;
-    const ctx = cvs.getContext("2d");
-    const last = lastPtRef.current;
-    if (last) {
-      ctx.beginPath();
-      ctx.moveTo(last.x, last.y);
-      ctx.lineTo(cx, cy);
-      ctx.stroke();
-    }
-    lastPtRef.current = { x: cx, y: cy };
-  }
-
-  function startCollect() {
-    setCollecting(true);
-    setTimeout(() => {
-      resetEntropy();
-      resizeTraceCanvas();
-    }, 0);
+    setProgress(Math.min(100, (ticks / TARGET_TICKS) * 100));
   }
 
   async function finishCollect() {
-    const entropy = await sha256(poolRef.current);
-    setCollecting(false);
-    await generateWithEntropy(entropy);
+    try {
+      setBusy(true);
+      const entropy = await sha256(poolRef.current);
+      const maybe = await mnemonicFromEntropy(kaspa, entropy);
+      const mnemonic = maybe || kaspa.Mnemonic.random(24);
+      await finalizeFromMnemonic(mnemonic);
+    } catch (e) {
+      console.error(e);
+      alert("Error during generation (see console).");
+    } finally {
+      setBusy(false);
+      setCollecting(false);
+    }
   }
+
+  async function skipEntropyAndGenerate() {
+    if (!kaspa) return;
+    try {
+      setBusy(true);
+      const mnemonic = kaspa.Mnemonic.random(24);
+      await finalizeFromMnemonic(mnemonic);
+    } catch (e) {
+      console.error(e);
+      alert("Error during generation (see console).");
+    } finally {
+      setBusy(false);
+      setCollecting(false);
+    }
+  }
+
+  async function finalizeFromMnemonic(mnemonic) {
+    const seed = mnemonic.toSeed(passphrase || "");
+    const xprv = new kaspa.XPrv(seed);
+    const gen = new kaspa.PrivateKeyGenerator(xprv, false, 0n);
+    const key = gen.receiveKey(0);
+    const net = kaspa.NetworkType.MAINNET;
+    const addr = key.toAddress(net).toString();
+
+    const printable = printableOf(mnemonic);
+    setWords(printable);
+    setPrivHex(key.toString());
+    setAddress(addr);
+
+    await drawQR(pubBackQRRef.current, addr, 520);
+    await drawQR(secQRRef.current, printable, 520);
+  }
+
+  function onGenerateClick() {
+    if (!kaspa || busy) return;
+    resetEntropy();
+    setCollecting(true);
+  }
+
+  // Attach entropy listeners while collecting
+  useEffect(() => {
+    if (!collecting) return;
+    const onMouse = (e) => addEntropySample(e);
+    const onTouch = (e) => {
+      const t = e.touches?.[0];
+      if (t)
+        addEntropySample({
+          clientX: t.clientX,
+          clientY: t.clientY,
+          movementX: 1,
+          movementY: 1,
+        });
+    };
+    window.addEventListener("mousemove", onMouse, { passive: true });
+    window.addEventListener("touchmove", onTouch, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", onMouse);
+      window.removeEventListener("touchmove", onTouch);
+    };
+  }, [collecting]);
+
+  // Auto-finish when 100%
+  useEffect(() => {
+    if (collecting && ticksRef.current >= TARGET_TICKS) {
+      finishCollect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress, collecting]);
 
   // ------------------------------------------
 
@@ -218,48 +250,6 @@ export default function App() {
     if (words) drawQR(secQRRef.current, words, 520);
   }, [words]);
 
-  async function generateWithEntropy(entropyBytes) {
-    if (!ready) return;
-    setBusy(true);
-    try {
-      let mnemonic = await mnemonicFromEntropy(kaspa, entropyBytes);
-      if (!mnemonic) mnemonic = kaspa.Mnemonic.random(24);
-
-      let printable = "";
-      try {
-        const s = mnemonic.toString();
-        const maybe = JSON.parse(s);
-        printable = maybe?.phrase || s;
-      } catch {
-        printable = mnemonic.toString();
-      }
-
-      const seed = mnemonic.toSeed(passphrase || "");
-      const xprv = new kaspa.XPrv(seed);
-      const gen = new kaspa.PrivateKeyGenerator(xprv, false, 0n);
-      const key = gen.receiveKey(0);
-      const net = kaspa.NetworkType.MAINNET;
-      const addr = key.toAddress(net).toString();
-
-      setWords(printable);
-      setPrivHex(key.toString());
-      setAddress(addr);
-
-      await drawQR(pubBackQRRef.current, addr, 520);
-      await drawQR(secQRRef.current, printable, 520);
-    } catch (e) {
-      console.error(e);
-      alert("Error during generation (see console).");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function onGenerateClick() {
-    if (!ready) return;
-    startCollect();
-  }
-
   const fillWidth = Math.min(100, Math.max(0.5, progress)); // in %, float
 
   return (
@@ -267,12 +257,10 @@ export default function App() {
       {/* === INLINE MASTHEAD (ex-SiteHeader) =============================== */}
       <div className="masthead noprint">
         <div className="masthead__inner">
-          {/* Left: Kaspa logo */}
           <div className="masthead__left">
             <img src={kaspaLogo} alt="Kaspa logo" className="site-logo" />
           </div>
 
-          {/* Center: title + byline */}
           <div className="masthead__center">
             <div className="title-line">
               <h1 className="site-title">Kaspa Paper Wallet Generator</h1>
@@ -291,7 +279,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right: social icons */}
           <nav className="masthead__right" aria-label="Social links">
             <a
               className="social-btn"
@@ -351,13 +338,14 @@ export default function App() {
           </section>
         </aside>
 
-        {/* STEP 2 — GÉNÉRATION (rail vertical 90°) */}
+        {/* STEP 2 — GÉNÉRATION (rail vertical 90°, entropie inline) */}
         <main className="col col-center noprint">
           <section className="step-card step2">
             <div className="step-head">
               <span className="step-kicker">STEP 2</span>
               <h2 className="step-title">Génération</h2>
             </div>
+
             <div className="step-body">
               <p className="muted">
                 Page 1 = Outside • Page 2 = Inside • Impression A4, recto/verso,
@@ -374,12 +362,44 @@ export default function App() {
                     placeholder="(empty recommended)"
                   />
                 </div>
+
                 <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
-                  <button disabled={!ready || busy} onClick={onGenerateClick}>
+                  <button
+                    disabled={!ready || busy || collecting}
+                    onClick={onGenerateClick}
+                  >
                     Generate Card
+                  </button>
+                  <button
+                    className="ghost"
+                    disabled={!ready || busy}
+                    onClick={skipEntropyAndGenerate}
+                    title="Générer sans collecte d'entropie"
+                  >
+                    Skip entropy
                   </button>
                 </div>
               </div>
+
+              {/* Inline entropy progress */}
+              {(collecting || ticksRef.current > 0) && (
+                <>
+                  <div className="pm-prog" style={{ marginTop: 12 }}>
+                    <div className="pm-prog__track">
+                      <div
+                        className="pm-prog__fill"
+                        style={{ width: `${fillWidth}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="progress-meta">
+                    <span>
+                      {ticksRef.current} / {TARGET_TICKS} samples
+                    </span>
+                    <span>{Math.floor(progress)}%</span>
+                  </div>
+                </>
+              )}
             </div>
           </section>
         </main>
@@ -474,68 +494,6 @@ export default function App() {
           </section>
         </section>
       </div>
-
-      {/* Entropy collection Overlay */}
-      {collecting && (
-        <div className="entropy-overlay">
-          <div className="entropy-card">
-            <h2>Strengthen Randomness 🌀</h2>
-            <p className="muted">
-              Move the mouse <strong>for a long time</strong> and{" "}
-              <em>unpredictably</em> within the large square. The bar must reach{" "}
-              <strong>100%</strong>.
-            </p>
-
-            <div
-              className="entropy-pad"
-              ref={padRef}
-              onMouseMove={addEntropySample}
-              onTouchMove={(e) => {
-                const t = e.touches[0];
-                if (t)
-                  addEntropySample({
-                    clientX: t.clientX,
-                    clientY: t.clientY,
-                    movementX: 1,
-                    movementY: 1,
-                  });
-              }}
-            >
-              <canvas ref={traceRef} className="entropy-canvas" />
-              <div className="entropy-instr">move your mouse here</div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="pm-prog">
-              <div className="pm-prog__track">
-                <div
-                  className="pm-prog__fill"
-                  style={{ width: `${fillWidth}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="progress-meta">
-              <span>
-                {ticksRef.current} / {1280} samples
-              </span>
-              <span>{Math.floor(progress)}%</span>
-            </div>
-
-            <div className="entropy-actions">
-              <button
-                disabled={ticksRef.current < 1280}
-                onClick={finishCollect}
-              >
-                Finish (100%)
-              </button>
-              <button className="ghost" onClick={() => setCollecting(false)}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
