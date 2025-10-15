@@ -1,11 +1,13 @@
 // src/App.jsx
 // UI + wallet generation. Header is now inlined at the top of the page.
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import QRCode from "qrcode";
 import "./App.css";
 import kaspaLogo from "./assets/kaspa-logo.webp";
 import martyMark from "./assets/marty.webp";
+import kaspaLogo2 from "./assets/kaspa-logo2.webp"; // ⬅️ mini-logo pour les volets
+import donateImg from "./assets/donate.webp";
 
 /** Draw a QR (fixed bitmap, clear before rendering) */
 async function drawQR(canvas, text, px = 520) {
@@ -94,6 +96,28 @@ export default function App() {
   const [privHex, setPrivHex] = useState("");
   const [address, setAddress] = useState("");
 
+  // === BRANDING (STEP 1) ===
+  const [walletName, setWalletName] = useState(""); // placeholder uniquement
+  const [tickerInput, setTickerInput] = useState("MARTY");
+  const previewUrl = useMemo(() => {
+    const t = (tickerInput || "").trim().toUpperCase();
+    return t ? `https://krc20-assets.kas.fyi/icons/${t}.jpg` : "";
+  }, [tickerInput]);
+  const [previewOk, setPreviewOk] = useState(true);
+  const [tokenImageUrl, setTokenImageUrl] = useState(null); // appliqué au STEP 3
+
+  // Longueur de seed (12 ou 24)
+  const [wordCount, setWordCount] = useState(24);
+
+  // 🎨 Couleur de fond de la carte (Step 3)
+  const [cardBg, setCardBg] = useState("#ffffff");
+
+  // Nom composé automatiquement: (TICKER)'S WALLET (ou WALLET si vide)
+  const composedWallet = useMemo(() => {
+    const t = (tickerInput || "").trim().toUpperCase();
+    return t ? `${t}'S WALLET` : "WALLET";
+  }, [tickerInput]);
+
   // QR canvases
   const pubBackQRRef = useRef(null);
   const secQRRef = useRef(null);
@@ -106,12 +130,29 @@ export default function App() {
   const ticksRef = useRef(0);
   const TARGET_TICKS = 1280;
 
-  // === Entropy helpers (no canvas trace, just sampling) ===
+  // ====== TRAIL (traits jaunes 2s) ======
+  const trailCanvasRef = useRef(null);
+  const trailRAF = useRef(null);
+  const lastTrailPtRef = useRef(null);
+  const trailSegRef = useRef([]); // {x0,y0,x1,y1,t}
+
+  const TRAIL_MAX_AGE = 2000; // ms
+  const TRAIL_RGB = [255, 208, 0];
+  const TRAIL_WIDTH = 2.2;
+
   function resetEntropy() {
     poolRef.current.fill(0);
     offsetRef.current = 0;
     ticksRef.current = 0;
     setProgress(0);
+    // reset trail
+    trailSegRef.current = [];
+    lastTrailPtRef.current = null;
+    const cvs = trailCanvasRef.current;
+    if (cvs) {
+      const ctx = cvs.getContext("2d");
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+    }
   }
 
   function addEntropySample(ev) {
@@ -144,35 +185,70 @@ export default function App() {
     setProgress(Math.min(100, (ticks / TARGET_TICKS) * 100));
   }
 
-  async function finishCollect() {
-    try {
-      setBusy(true);
-      const entropy = await sha256(poolRef.current);
-      const maybe = await mnemonicFromEntropy(kaspa, entropy);
-      const mnemonic = maybe || kaspa.Mnemonic.random(24);
-      await finalizeFromMnemonic(mnemonic);
-    } catch (e) {
-      console.error(e);
-      alert("Error during generation (see console).");
-    } finally {
-      setBusy(false);
-      setCollecting(false);
+  function addTrailPoint(clientX, clientY) {
+    const last = lastTrailPtRef.current;
+    const now = performance.now();
+    if (last) {
+      trailSegRef.current.push({
+        x0: last.x,
+        y0: last.y,
+        x1: clientX,
+        y1: clientY,
+        t: now,
+      });
     }
+    lastTrailPtRef.current = { x: clientX, y: clientY };
   }
 
-  async function skipEntropyAndGenerate() {
-    if (!kaspa) return;
-    try {
-      setBusy(true);
-      const mnemonic = kaspa.Mnemonic.random(24);
-      await finalizeFromMnemonic(mnemonic);
-    } catch (e) {
-      console.error(e);
-      alert("Error during generation (see console).");
-    } finally {
-      setBusy(false);
-      setCollecting(false);
-    }
+  function startTrail() {
+    const cvs = trailCanvasRef.current;
+    if (!cvs) return;
+    const ctx = cvs.getContext("2d");
+    const fit = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      cvs.style.width = w + "px";
+      cvs.style.height = h + "px";
+      cvs.width = Math.floor(w * dpr);
+      cvs.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    fit();
+    const onResize = () => fit();
+    window.addEventListener("resize", onResize);
+
+    const draw = () => {
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+      const now = performance.now();
+      const segs = trailSegRef.current;
+      let i = 0;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (const seg of segs) {
+        const age = now - seg.t;
+        if (age < TRAIL_MAX_AGE) {
+          const alpha = 1 - age / TRAIL_MAX_AGE;
+          ctx.strokeStyle = `rgba(${TRAIL_RGB[0]}, ${TRAIL_RGB[1]}, ${TRAIL_RGB[2]}, ${alpha})`;
+          ctx.lineWidth = TRAIL_WIDTH;
+          ctx.beginPath();
+          ctx.moveTo(seg.x0, seg.y0);
+          ctx.lineTo(seg.x1, seg.y1);
+          ctx.stroke();
+          segs[i++] = seg;
+        }
+      }
+      segs.length = i;
+      trailRAF.current = requestAnimationFrame(draw);
+    };
+
+    trailRAF.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(trailRAF.current);
+      window.removeEventListener("resize", onResize);
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+    };
   }
 
   async function finalizeFromMnemonic(mnemonic) {
@@ -192,31 +268,94 @@ export default function App() {
     await drawQR(secQRRef.current, printable, 520);
   }
 
+  async function finishCollect() {
+    try {
+      setBusy(true);
+      // Entropie brute 32 octets -> adapte à 12 (128-bit) ou 24 (256-bit)
+      const digest = await sha256(poolRef.current);
+      let entropyBytes = digest;
+      if (wordCount === 12) entropyBytes = digest.slice(0, 16);
+
+      const maybe = await mnemonicFromEntropy(kaspa, entropyBytes);
+      const mnemonic = maybe || kaspa.Mnemonic.random(wordCount);
+      await finalizeFromMnemonic(mnemonic);
+    } catch (e) {
+      console.error(e);
+      alert("Error during generation (see console).");
+    } finally {
+      setBusy(false);
+      setCollecting(false);
+    }
+  }
+
+  async function skipEntropyAndGenerate() {
+    if (!kaspa) return;
+    try {
+      setBusy(true);
+      const mnemonic = kaspa.Mnemonic.random(wordCount);
+      await finalizeFromMnemonic(mnemonic);
+    } catch (e) {
+      console.error(e);
+      alert("Error during generation (see console).");
+    } finally {
+      setBusy(false);
+      setCollecting(false);
+    }
+  }
+
   function onGenerateClick() {
     if (!kaspa || busy) return;
     resetEntropy();
     setCollecting(true);
   }
 
-  // Attach entropy listeners while collecting
+  // ⛔ SUPPRIMÉ: l’auto-génération lors du changement 12/24 mots.
+
+  // Attach entropy listeners while collecting + curseur jaune + trail
   useEffect(() => {
     if (!collecting) return;
-    const onMouse = (e) => addEntropySample(e);
+
+    const svg =
+      `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>` +
+      `<circle cx='4' cy='4' r='3' fill='#ffd000' stroke='#222' stroke-width='1'/>` +
+      `</svg>`;
+    const url = `url("data:image/svg+xml,${encodeURIComponent(
+      svg
+    )}") 4 4, crosshair`;
+    const prevCursor = document.body.style.cursor;
+    document.body.style.cursor = url;
+
+    const stopTrail = startTrail();
+
+    const onMove = (e) => {
+      const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+      const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+      addEntropySample(e);
+      addTrailPoint(x, y);
+    };
     const onTouch = (e) => {
       const t = e.touches?.[0];
-      if (t)
+      if (t) {
         addEntropySample({
           clientX: t.clientX,
           clientY: t.clientY,
           movementX: 1,
           movementY: 1,
         });
+        addTrailPoint(t.clientX, t.clientY);
+      }
     };
-    window.addEventListener("mousemove", onMouse, { passive: true });
+
+    window.addEventListener("mousemove", onMove, { passive: true });
     window.addEventListener("touchmove", onTouch, { passive: true });
+
     return () => {
-      window.removeEventListener("mousemove", onMouse);
+      window.removeEventListener("mousemove", onMove);
       window.removeEventListener("touchmove", onTouch);
+      document.body.style.cursor = prevCursor || "";
+      if (stopTrail) stopTrail();
+      trailSegRef.current = [];
+      lastTrailPtRef.current = null;
     };
   }, [collecting]);
 
@@ -225,11 +364,9 @@ export default function App() {
     if (collecting && ticksRef.current >= TARGET_TICKS) {
       finishCollect();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, collecting]);
+  }, [progress, collecting]); // eslint-disable-line
 
   // ------------------------------------------
-
   useEffect(() => {
     (async () => {
       try {
@@ -251,6 +388,19 @@ export default function App() {
   }, [words]);
 
   const fillWidth = Math.min(100, Math.max(0.5, progress)); // in %, float
+
+  // Style commun pour le mini-logo sur chaque VOLET (half)
+  const paneBadgeStyle = {
+    position: "absolute",
+    left: "50%",
+    bottom: "2.8mm",
+    transform: "translateX(-50%)",
+    width: "12mm",
+    height: "auto",
+    pointerEvents: "none",
+    filter: "drop-shadow(0 0.4mm 0.8mm rgba(0,0,0,.18))",
+    opacity: 0.95,
+  };
 
   return (
     <div className="app">
@@ -319,20 +469,175 @@ export default function App() {
               <h2 className="step-title">Branding</h2>
             </div>
             <div className="step-body">
-              <div className="brand-logo">
-                <div className="logo-ph">Logo</div>
+              {/* Aperçu image (ticker) */}
+              <div className="brand-logo" style={{ marginBottom: 12 }}>
+                <div
+                  className="logo-ph"
+                  style={{
+                    position: "relative",
+                    display: "grid",
+                    placeItems: "center",
+                    overflow: "visible",
+                  }}
+                >
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Token preview"
+                      style={{
+                        display: "block",
+                        height: "auto",
+                        maxHeight: "2000px",
+                        maxWidth: "96%",
+                        objectFit: "contain",
+                        margin: "0 auto",
+                      }}
+                      onLoad={() => setPreviewOk(true)}
+                      onError={() => setPreviewOk(false)}
+                    />
+                  ) : (
+                    "Logo"
+                  )}
+
+                  {!previewOk && (
+                    <div
+                      style={{
+                        minHeight: "120px",
+                        width: "100%",
+                        display: "grid",
+                        placeItems: "center",
+                        color: "#b00020",
+                        fontWeight: 700,
+                        background: "rgba(255,255,255,0.6)",
+                        borderRadius: 12,
+                      }}
+                    >
+                      Not found
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Wallet name (modifiable) */}
               <label className="brand-label">Wallet name</label>
               <input
                 type="text"
-                placeholder="ex: PaperMarty"
+                placeholder="ex: kaspa"
                 className="brand-input"
-                disabled
-                title="À brancher plus tard"
+                value={walletName}
+                onChange={(e) => setWalletName(e.target.value)}
               />
+
+              {/* Ticker + bouton d’application */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr auto",
+                  gap: 8,
+                  marginTop: 10,
+                }}
+              >
+                <div>
+                  <label className="brand-label">Token ticker (KRC-20)</label>
+                  <input
+                    type="text"
+                    placeholder="ex: MARTY"
+                    value={tickerInput}
+                    onChange={(e) =>
+                      setTickerInput(e.target.value.toUpperCase())
+                    }
+                    spellCheck={false}
+                  />
+                </div>
+                <div style={{ display: "flex", alignItems: "end" }}>
+                  <button
+                    className="ghost"
+                    disabled={!previewUrl || !previewOk}
+                    onClick={() => setTokenImageUrl(previewUrl)}
+                    title="Utiliser ce logo sur la carte"
+                  >
+                    Use on card
+                  </button>
+                </div>
+              </div>
+
+              {/* Sélection 12 / 24 mots + 🎨 couleur à côté */}
+              <div style={{ marginTop: 14 }}>
+                <label className="brand-label">Longueur de la seed</label>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      gap: 6,
+                      alignItems: "center",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="seedlen"
+                      value="12"
+                      checked={wordCount === 12}
+                      onChange={() => setWordCount(12)}
+                    />
+                    12 mots
+                  </label>
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      gap: 6,
+                      alignItems: "center",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="seedlen"
+                      value="24"
+                      checked={wordCount === 24}
+                      onChange={() => setWordCount(24)}
+                    />
+                    24 mots
+                  </label>
+
+                  {/* Sélecteur couleur sur la même ligne */}
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginLeft: "auto",
+                    }}
+                  >
+                    <span className="brand-label" style={{ margin: 0 }}>
+                      Fond
+                    </span>
+                    <input
+                      type="color"
+                      value={cardBg}
+                      onChange={(e) => setCardBg(e.target.value)}
+                      aria-label="Choisir la couleur de fond de la carte"
+                      style={{
+                        width: 44,
+                        height: 32,
+                        padding: 0,
+                        border: "none",
+                        background: "transparent",
+                        cursor: "pointer",
+                        appearance: "auto",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <p className="muted" style={{ marginTop: 8 }}>
-                (On choisira l’image et le nom plus tard)
+                L’URL est cachée. Seul le ticker est nécessaire.
               </p>
             </div>
           </section>
@@ -381,7 +686,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Inline entropy progress */}
               {(collecting || ticksRef.current > 0) && (
                 <>
                   <div className="pm-prog" style={{ marginTop: 12 }}>
@@ -399,6 +703,62 @@ export default function App() {
                     <span>{Math.floor(progress)}%</span>
                   </div>
                 </>
+              )}
+              {address && (
+                <div
+                  className="donate-block"
+                  style={{
+                    marginTop: 100, // ⬅️ était 16 — ajoute plus d'air avant le titre
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    className="muted"
+                    style={{
+                      fontWeight: 900,
+                      textTransform: "uppercase",
+                      letterSpacing: ".06em",
+                      marginBottom: 20, // ⬅️ un peu plus d’air sous le titre
+                      fontSize: "25px", // ⬅️ agrandit le texte "Faire un don"
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Faire un don
+                  </div>
+
+                  <img
+                    src={donateImg}
+                    alt="Faire un don en Kaspa"
+                    style={{
+                      display: "block",
+                      margin: "0 auto 8px",
+                      maxWidth: 200,
+                      width: "100%",
+                      height: "auto",
+                      borderRadius: 12,
+                      boxShadow: "0 6px 18px rgba(0,0,0,.12)",
+                    }}
+                    loading="lazy"
+                    decoding="async"
+                  />
+
+                  <code
+                    className="mono no-scroll"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: "rgba(0,0,0,.06)",
+                      userSelect: "all",
+                      fontSize: "15px", // ⬅️ agrandis ici (ex: 16–20px)
+                      lineHeight: 1.25,
+                      letterSpacing: "0.2px",
+                      wordBreak: "break-all", // ⬅️ évite tout débordement
+                    }}
+                  >
+                    kaspa:qrdc534sgr3ng96dmkcxnsz5c827g2s7mecpqvmlrkfuunnsu9tnjkv5q8emd
+                  </code>
+                </div>
               )}
             </div>
           </section>
@@ -419,36 +779,130 @@ export default function App() {
                 <div className="preview-stage">
                   {/* ================= PAGE 1 — OUTSIDE ================= */}
                   <div className="preview-sheet">
-                    <div className="sheet card-sheet outside">
-                      <div className="half back">
+                    <div
+                      className="sheet card-sheet outside"
+                      style={{ backgroundColor: cardBg }}
+                    >
+                      <div
+                        className="half back"
+                        style={{ position: "relative" }}
+                      >
                         <div className="pad pad-back">
                           <canvas ref={pubBackQRRef} className="qr-public" />
                           <div className="addrBlock addr-back">
                             <code className="addr">{address || "…"}</code>
                           </div>
                         </div>
+                        {/* mini-logo sur le volet BACK */}
+                        <img
+                          src={kaspaLogo2}
+                          alt="Kaspa"
+                          style={paneBadgeStyle}
+                          crossOrigin="anonymous"
+                        />
                       </div>
-                      <div className="half cover">
-                        <div className="pad pad-cover">
-                          <div className="logo">
-                            PAPER<span>MARTY</span>
+
+                      <div
+                        className="half cover"
+                        style={{ position: "relative" }}
+                      >
+                        <div
+                          className="pad pad-cover"
+                          style={{ gap: "2.5mm", alignItems: "center" }}
+                        >
+                          {/* Ligne du nom du wallet (au-dessus) */}
+                          {walletName.trim() && (
+                            <div
+                              className="cover-owner"
+                              style={{
+                                textAlign: "center",
+                                fontSize: "6.2mm",
+                                letterSpacing: "0.22mm",
+                                fontWeight: 900,
+                                textTransform: "uppercase",
+                                lineHeight: 1.02,
+                                color: "#111",
+                              }}
+                            >
+                              {walletName}
+                            </div>
+                          )}
+
+                          {/* Nom composé (TICKER'S WALLET) */}
+                          <div
+                            className="cover-name"
+                            style={{
+                              textAlign: "center",
+                              fontSize: "9mm",
+                              letterSpacing: "0.25mm",
+                              fontWeight: 900,
+                              textTransform: "uppercase",
+                              lineHeight: 1.02,
+                            }}
+                          >
+                            {composedWallet}
                           </div>
+
+                          {/* Image du token (si appliquée) */}
+                          {tokenImageUrl && (
+                            <div
+                              className="token-slot"
+                              style={{
+                                width: "36mm",
+                                height: "36mm",
+                                border: "1px solid #ddd",
+                                borderRadius: "2mm",
+                                background: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                overflow: "hidden",
+                              }}
+                            >
+                              <img
+                                src={tokenImageUrl}
+                                alt="Token"
+                                style={{
+                                  maxWidth: "100%",
+                                  maxHeight: "100%",
+                                  display: "block",
+                                }}
+                                crossOrigin="anonymous"
+                              />
+                            </div>
+                          )}
                         </div>
+                        {/* mini-logo sur le volet COVER */}
+                        <img
+                          src={kaspaLogo2}
+                          alt="Kaspa"
+                          style={paneBadgeStyle}
+                          crossOrigin="anonymous"
+                        />
                       </div>
+
                       <div className="fold-line" aria-hidden="true" />
                     </div>
                   </div>
 
                   {/* ================= PAGE 2 — INSIDE ================= */}
                   <div className="preview-sheet">
-                    <div className="sheet card-sheet inside">
-                      <div className="half secret-left">
+                    <div
+                      className="sheet card-sheet inside"
+                      style={{ backgroundColor: cardBg }}
+                    >
+                      <div
+                        className="half secret-left"
+                        style={{ position: "relative" }}
+                      >
                         <div className="pad pad-secret">
                           <div className="label danger">
                             SECRET — DO NOT SHARE
                           </div>
                           <div className="info">
-                            <label className="label">Seed (24 words)</label>
+                            <label className="label">
+                              Seed ({wordCount} words)
+                            </label>
                             <code className="mono no-scroll">
                               {words || "…"}
                             </code>
@@ -466,13 +920,34 @@ export default function App() {
                             </code>
                           </div>
                         </div>
+                        {/* mini-logo sur le volet SECRET-LEFT */}
+                        <img
+                          src={kaspaLogo2}
+                          alt="Kaspa"
+                          style={paneBadgeStyle}
+                          crossOrigin="anonymous"
+                        />
                       </div>
-                      <div className="half secret-right">
+
+                      <div
+                        className="half secret-right"
+                        style={{ position: "relative" }}
+                      >
                         <div className="pad">
-                          <div className="label">QR — Seed (24 words)</div>
+                          <div className="label">
+                            QR — Seed ({wordCount} words)
+                          </div>
                           <canvas ref={secQRRef} className="qr-seed" />
                         </div>
+                        {/* mini-logo sur le volet SECRET-RIGHT */}
+                        <img
+                          src={kaspaLogo2}
+                          alt="Kaspa"
+                          style={paneBadgeStyle}
+                          crossOrigin="anonymous"
+                        />
                       </div>
+
                       <div className="fold-line" aria-hidden="true" />
                     </div>
                   </div>
@@ -494,6 +969,19 @@ export default function App() {
           </section>
         </section>
       </div>
+
+      {/* Canvas des traits jaunes (affiché seulement pendant l’entropie) */}
+      <canvas
+        ref={trailCanvasRef}
+        className="noprint"
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 5,
+          display: collecting ? "block" : "none",
+        }}
+      />
     </div>
   );
 }

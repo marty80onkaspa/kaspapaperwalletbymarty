@@ -4,7 +4,12 @@
 
 /* -------------------------------------------------------------------------
    TOKENS (EDIT THESE)
+ 
    ------------------------------------------------------------------------- */
+
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap");
+
 :root {
   /* Colors */
   --bg: #70c7ba;
@@ -27,12 +32,14 @@
   --social-gap: 14px;
 
   /* Typography */
-  --title-font: "Times New Roman", Times, Georgia, Garamond, Baskerville, serif;
-  --title-size: 34px;
+  --title-font: "Lato", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+
+  --title-size: 44px;
   --title-weight: 700;
   --title-by-gap: 6px;
   --byline-size: 12px;
-  --byline-icon-size: 16px;
+  --byline-icon-size: 55px;
 
   /* Logos / socials */
   --logo-size: 110px;
@@ -72,7 +79,7 @@
   :root {
     --title-size: 30px;
     --byline-size: 11px;
-    --byline-icon-size: 14px;
+    --byline-icon-size: 18px;
     --logo-size: 56px;
     --social-icon: 20px;
     --social-hit: 6px;
@@ -101,9 +108,10 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink-strong);
-  font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
-    Noto Sans, Arial, sans-serif;
+  font: 14px/1.35 "Lato", system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
+    Cantarell, "Noto Sans", Arial, sans-serif;
 }
+
 .app {
   width: 100%;
   margin: var(--app-mt) 0;
@@ -742,4 +750,312 @@ button.ghost {
 .step-card.step1 .step-title,
 .step-card.step2 .step-title {
   font-size: 16px;
+}
+/* === Entropy Cursor (halo) ========================================= */
+.entropy-cursor {
+  position: fixed;
+  left: var(--x, -100px);
+  top: var(--y, -100px);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0; /* caché par défaut */
+  z-index: 9999;
+  border: 2px solid rgba(34, 216, 162, 0.9); /* vert/teal */
+  box-shadow: 0 0 14px rgba(34, 216, 162, 0.6),
+    0 0 30px rgba(42, 109, 244, 0.35); /* léger bleu pour rappeler le thème */
+  transform: translate(-50%, -50%); /* centré sur la souris */
+  transition: opacity 120ms ease;
+  mix-blend-mode: screen; /* joli rendu sur fond teal */
+}
+.entropy-cursor.on {
+  opacity: 0.95;
+  animation: entropyPulse 900ms ease-in-out infinite alternate;
+}
+.entropy-cursor.on::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 2px dashed rgba(34, 216, 162, 0.55);
+  border-radius: 50%;
+  animation: entropySpin 1.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes entropyPulse {
+  from {
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+@keyframes entropySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Masthead title uses Rubik (without touching step titles) */
+.masthead .site-title {
+  font-family: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif !important;
+  font-weight: 800; /* 700 ou 800 selon le rendu que tu préfères */
+  letter-spacing: 0.02em; /* optionnel, un poil + serré */
+}
+/* =======================
+   MOBILE: stack 3 steps
+   ======================= */
+@media (max-width: 900px) {
+  /* Autoriser le scroll en mobile */
+  html,
+  body,
+  #root,
+  .app {
+    height: auto;
+    min-height: 100%;
+  }
+  body {
+    overflow: auto; /* on annule le overflow:hidden global */
+  }
+
+  /* 3 colonnes -> 1 colonne */
+  .layout3 {
+    grid-template-columns: 1fr;
+    height: auto; /* plus de hauteur fixe liée au viewport */
+    gap: 16px; /* un peu d’air entre les cards */
+  }
+
+  /* Les contenus des steps peuvent grandir naturellement */
+  .step-card .step-body {
+    overflow: visible; /* pas de scroll interne en mobile */
+  }
+
+  /* STEP 3 : on garde le rail à gauche,
+     et on place le bouton Print en dessous pour éviter l’écrasement */
+  .step-card.step3 {
+    grid-template-columns: var(--step3-rail-w) 1fr;
+    grid-template-areas:
+      "rail body"
+      "print print";
+  }
+  .step-card.step3 .step-side-print {
+    padding: 8px 0 0;
+    place-items: center;
+  }
+
+  /* Optionnel : réduire un poil les marges horizontales internes en mobile */
+  .step-card.step3 .step-body,
+  .step-card.step1 .step-body,
+  .step-card.step2 .step-body {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+/* ==============================
+   MOBILE: scroll + stack (fix)
+   ============================== */
+@media (max-width: 900px) {
+  /* Débloquer le scroll */
+  html,
+  body {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch; /* inertie iOS */
+    overscroll-behavior-y: contain;
+  }
+
+  /* Ne pas forcer 100% de hauteur côté app */
+  #root,
+  .app {
+    height: auto !important;
+    min-height: 100%;
+  }
+
+  /* 3 colonnes -> 1 colonne + hauteur auto */
+  .layout3 {
+    grid-template-columns: 1fr;
+    height: auto !important;
+    gap: 16px;
+  }
+
+  /* Pas de scroll interne aux cards en mobile */
+  .step-card .step-body {
+    overflow: visible !important;
+  }
+
+  /* STEP 3 : bouton Print passe sous l’aperçu (plus d’écrasement latéral) */
+  .step-card.step3 {
+    grid-template-columns: var(--step3-rail-w) 1fr;
+    grid-template-areas:
+      "rail body"
+      "print print";
+  }
+  .step-card.step3 .step-side-print {
+    padding: 8px 0 0;
+    place-items: center;
+  }
+}
+/* ===== Fix molette souris en mode mobile + stacking ===== */
+@media (max-width: 900px) {
+  /* Le body devient bien le conteneur scrollable */
+  html,
+  body {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ces wrappers ne doivent pas enfermer le scroll */
+  #root,
+  .app {
+    height: auto !important;
+    min-height: 100%;
+  }
+
+  /* Empiler les 3 steps + laisser la hauteur se calculer */
+  .layout3 {
+    grid-template-columns: 1fr;
+    height: auto !important;
+  }
+
+  /* 🔑 Important : ne pas couper la molette sur les colonnes/step */
+  .col {
+    overflow: visible !important;
+  }
+  .step-card .step-body {
+    overflow: visible !important;
+  }
+
+  /* Optionnel: STEP 3, bouton Print en-dessous pour éviter les chevauchements */
+  .step-card.step3 {
+    grid-template-columns: var(--step3-rail-w) 1fr;
+    grid-template-areas:
+      "rail body"
+      "print print";
+  }
+  .step-card.step3 .step-side-print {
+    padding-top: 8px;
+  }
+}
+/* ==============================
+   MOBILE: forcer le scroll molette
+   ============================== */
+@media (max-width: 900px) {
+  /* Le body redevient l'unique conteneur scrollable */
+  html,
+  body {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: scroll !important; /* ← force un conteneur de scroll (molette OK) */
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Rien d'autre ne doit confisquer le scroll */
+  #root,
+  .app,
+  .layout3,
+  .col {
+    height: auto !important;
+    overflow: visible !important; /* ← évite de “manger” les events wheel */
+  }
+
+  /* Le contenu interne des steps ne crée pas de sous-scroll */
+  .step-card .step-body {
+    overflow: visible !important;
+  }
+}
+/* =========================
+   MOBILE masthead: no overlap
+   ========================= */
+@media (max-width: 900px) {
+  .masthead {
+    padding: 8px 16px;
+  }
+
+  /* Turn the header into a simple grid with title on its own row */
+  .masthead__inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "logo socials"
+      "title title";
+    gap: 8px;
+  }
+
+  .masthead__left {
+    grid-area: logo;
+  }
+  .masthead__right {
+    grid-area: socials;
+    justify-content: end;
+  }
+  .masthead__center {
+    grid-area: title;
+    position: static !important; /* stop overlapping */
+    transform: none !important;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  /* Let the title and byline wrap nicely */
+  .title-line {
+    white-space: normal; /* was nowrap */
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Make elements smaller on mobile */
+  .site-logo {
+    width: 56px;
+    height: 56px;
+  }
+  .site-title {
+    font-size: clamp(22px, 6.2vw, var(--title-size));
+  }
+  .site-byline {
+    font-size: 12px;
+  }
+  .by-icon {
+    width: 18px;
+    height: 18px;
+  }
+  .social-btn {
+    --social-hit: 6px;
+  }
+  .social-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+/* ===== Mobile: 1 seule barre de scroll (sur <html>) ===== */
+@media (max-width: 900px) {
+  /* Le viewport (html) gère le scroll */
+  html {
+    overflow-y: auto;
+    height: auto !important;
+  }
+
+  /* Le body ne scrolle pas */
+  body {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Empêcher tout scroll imbriqué */
+  #root,
+  .app,
+  .layout3,
+  .col,
+  .step-card,
+  .step-body,
+  .preview-panel,
+  .preview-stage {
+    height: auto !important;
+    overflow: visible !important;
+  }
 }
