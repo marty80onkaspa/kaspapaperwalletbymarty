@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 import "./App.css";
 import kaspaLogo from "./assets/kaspa-logo.webp";
 import martyMark from "./assets/marty.webp";
-import kaspaLogo2 from "./assets/kaspa-logo2.webp"; // ⬅️ mini-logo pour les volets
+import kaspaLogo2 from "./assets/kaspa-logo2.webp"; // mini-logo for the panels
 import donateImg from "./assets/donate.webp";
 
 /** Draw a QR (fixed bitmap, clear before rendering) */
@@ -97,22 +97,22 @@ export default function App() {
   const [address, setAddress] = useState("");
 
   // === BRANDING (STEP 1) ===
-  const [walletName, setWalletName] = useState(""); // placeholder uniquement
+  const [walletName, setWalletName] = useState(""); // placeholder only
   const [tickerInput, setTickerInput] = useState("MARTY");
   const previewUrl = useMemo(() => {
     const t = (tickerInput || "").trim().toUpperCase();
     return t ? `https://krc20-assets.kas.fyi/icons/${t}.jpg` : "";
   }, [tickerInput]);
   const [previewOk, setPreviewOk] = useState(true);
-  const [tokenImageUrl, setTokenImageUrl] = useState(null); // appliqué au STEP 3
+  const [tokenImageUrl, setTokenImageUrl] = useState(null); // applied on STEP 3
 
-  // Longueur de seed (12 ou 24)
+  // Seed length (12 or 24)
   const [wordCount, setWordCount] = useState(24);
 
-  // 🎨 Couleur de fond de la carte (Step 3)
+  // 🎨 Card background color (Step 3)
   const [cardBg, setCardBg] = useState("#ffffff");
 
-  // Nom composé automatiquement: (TICKER)'S WALLET (ou WALLET si vide)
+  // Auto-composed name: (TICKER)'S WALLET (or WALLET if empty)
   const composedWallet = useMemo(() => {
     const t = (tickerInput || "").trim().toUpperCase();
     return t ? `${t}'S WALLET` : "WALLET";
@@ -130,7 +130,7 @@ export default function App() {
   const ticksRef = useRef(0);
   const TARGET_TICKS = 1280;
 
-  // ====== TRAIL (traits jaunes 2s) ======
+  // ====== TRAIL (yellow strokes ~2s) ======
   const trailCanvasRef = useRef(null);
   const trailRAF = useRef(null);
   const lastTrailPtRef = useRef(null);
@@ -271,7 +271,7 @@ export default function App() {
   async function finishCollect() {
     try {
       setBusy(true);
-      // Entropie brute 32 octets -> adapte à 12 (128-bit) ou 24 (256-bit)
+      // Raw 32-byte entropy -> adapt to 12 (128-bit) or 24 (256-bit)
       const digest = await sha256(poolRef.current);
       let entropyBytes = digest;
       if (wordCount === 12) entropyBytes = digest.slice(0, 16);
@@ -309,9 +309,9 @@ export default function App() {
     setCollecting(true);
   }
 
-  // ⛔ SUPPRIMÉ: l’auto-génération lors du changement 12/24 mots.
+  // Auto-generation on 12/24 toggle is intentionally disabled.
 
-  // Attach entropy listeners while collecting + curseur jaune + trail
+  // Attach entropy listeners while collecting + yellow cursor + trail
   useEffect(() => {
     if (!collecting) return;
 
@@ -389,7 +389,7 @@ export default function App() {
 
   const fillWidth = Math.min(100, Math.max(0.5, progress)); // in %, float
 
-  // Style commun pour le mini-logo sur chaque VOLET (half)
+  // Common style for the mini-logo on each PANEL (half)
   const paneBadgeStyle = {
     position: "absolute",
     left: "50%",
@@ -404,7 +404,7 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* === INLINE MASTHEAD (ex-SiteHeader) =============================== */}
+      {/* === INLINE MASTHEAD (former SiteHeader) ========================== */}
       <div className="masthead noprint">
         <div className="masthead__inner">
           <div className="masthead__left">
@@ -432,7 +432,7 @@ export default function App() {
           <nav className="masthead__right" aria-label="Social links">
             <a
               className="social-btn"
-              href="https://github.com/ton-compte"
+              href="https://github.com/marty80onkaspa"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub"
@@ -445,7 +445,7 @@ export default function App() {
 
             <a
               className="social-btn"
-              href="https://x.com/ton-compte"
+              href="https://x.com/Marty80onKaspa"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="X (Twitter)"
@@ -461,7 +461,7 @@ export default function App() {
 
       {/* === 3-COLUMN LAYOUT ============================================== */}
       <div className="layout3">
-        {/* STEP 1 — BRANDING (rail vertical 90°) */}
+        {/* STEP 1 — BRANDING (vertical rail 90°) */}
         <aside className="col col-left noprint">
           <section className="step-card step1">
             <div className="step-head">
@@ -469,7 +469,7 @@ export default function App() {
               <h2 className="step-title">Branding</h2>
             </div>
             <div className="step-body">
-              {/* Aperçu image (ticker) */}
+              {/* Token image preview (by ticker) */}
               <div className="brand-logo" style={{ marginBottom: 12 }}>
                 <div
                   className="logo-ph"
@@ -518,17 +518,17 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Wallet name (modifiable) */}
-              <label className="brand-label">Wallet name</label>
+              {/* Wallet name (editable) */}
+              <label className="brand-label">Choose Wallet name</label>
               <input
                 type="text"
-                placeholder="ex: kaspa"
+                placeholder="e.g., kaspa"
                 className="brand-input"
                 value={walletName}
                 onChange={(e) => setWalletName(e.target.value)}
               />
 
-              {/* Ticker + bouton d’application */}
+              {/* Ticker + apply button */}
               <div
                 style={{
                   display: "grid",
@@ -538,10 +538,12 @@ export default function App() {
                 }}
               >
                 <div>
-                  <label className="brand-label">Token ticker (KRC-20)</label>
+                  <label className="brand-label">
+                    Choose Token ticker (KRC-20)
+                  </label>
                   <input
                     type="text"
-                    placeholder="ex: MARTY"
+                    placeholder="e.g., MARTY"
                     value={tickerInput}
                     onChange={(e) =>
                       setTickerInput(e.target.value.toUpperCase())
@@ -554,16 +556,16 @@ export default function App() {
                     className="ghost"
                     disabled={!previewUrl || !previewOk}
                     onClick={() => setTokenImageUrl(previewUrl)}
-                    title="Utiliser ce logo sur la carte"
+                    title="Use this logo on the card"
                   >
                     Use on card
                   </button>
                 </div>
               </div>
 
-              {/* Sélection 12 / 24 mots + 🎨 couleur à côté */}
+              {/* 12 / 24 words + 🎨 color picker on the same row */}
               <div style={{ marginTop: 14 }}>
-                <label className="brand-label">Longueur de la seed</label>
+                <label className="brand-label">Seed length</label>
                 <div
                   style={{
                     display: "flex",
@@ -586,7 +588,7 @@ export default function App() {
                       checked={wordCount === 12}
                       onChange={() => setWordCount(12)}
                     />
-                    12 mots
+                    12 words
                   </label>
                   <label
                     style={{
@@ -602,10 +604,10 @@ export default function App() {
                       checked={wordCount === 24}
                       onChange={() => setWordCount(24)}
                     />
-                    24 mots
+                    24 words
                   </label>
 
-                  {/* Sélecteur couleur sur la même ligne */}
+                  {/* Color selector on the same line */}
                   <div
                     style={{
                       display: "inline-flex",
@@ -615,13 +617,13 @@ export default function App() {
                     }}
                   >
                     <span className="brand-label" style={{ margin: 0 }}>
-                      Fond
+                      Background
                     </span>
                     <input
                       type="color"
                       value={cardBg}
                       onChange={(e) => setCardBg(e.target.value)}
-                      aria-label="Choisir la couleur de fond de la carte"
+                      aria-label="Choose card background color"
                       style={{
                         width: 44,
                         height: 32,
@@ -637,24 +639,24 @@ export default function App() {
               </div>
 
               <p className="muted" style={{ marginTop: 8 }}>
-                L’URL est cachée. Seul le ticker est nécessaire.
+                The URL is hidden. Only the ticker is needed.
               </p>
             </div>
           </section>
         </aside>
 
-        {/* STEP 2 — GÉNÉRATION (rail vertical 90°, entropie inline) */}
+        {/* STEP 2 — GENERATION (vertical rail 90°, inline entropy) */}
         <main className="col col-center noprint">
           <section className="step-card step2">
             <div className="step-head">
               <span className="step-kicker">STEP 2</span>
-              <h2 className="step-title">Génération</h2>
+              <h2 className="step-title">Generation</h2>
             </div>
 
             <div className="step-body">
               <p className="muted">
-                Page 1 = Outside • Page 2 = Inside • Impression A4, recto/verso,
-                flip court.
+                Before generating the address you can cut your internet
+                connection if you want
               </p>
 
               <div className="row" style={{ marginTop: 12 }}>
@@ -679,7 +681,7 @@ export default function App() {
                     className="ghost"
                     disabled={!ready || busy}
                     onClick={skipEntropyAndGenerate}
-                    title="Générer sans collecte d'entropie"
+                    title="Generate without entropy collection"
                   >
                     Skip entropy
                   </button>
@@ -708,7 +710,7 @@ export default function App() {
                 <div
                   className="donate-block"
                   style={{
-                    marginTop: 100, // ⬅️ était 16 — ajoute plus d'air avant le titre
+                    marginTop: 100, // was 16 — add more air before the title
                     textAlign: "center",
                   }}
                 >
@@ -718,17 +720,17 @@ export default function App() {
                       fontWeight: 900,
                       textTransform: "uppercase",
                       letterSpacing: ".06em",
-                      marginBottom: 20, // ⬅️ un peu plus d’air sous le titre
-                      fontSize: "25px", // ⬅️ agrandit le texte "Faire un don"
+                      marginBottom: 20, // a bit more air under the title
+                      fontSize: "25px", // enlarge "Donate"
                       lineHeight: 1.2,
                     }}
                   >
-                    Faire un don
+                    Donate
                   </div>
 
                   <img
                     src={donateImg}
-                    alt="Faire un don en Kaspa"
+                    alt="Donate in Kaspa"
                     style={{
                       display: "block",
                       margin: "0 auto 8px",
@@ -750,10 +752,10 @@ export default function App() {
                       borderRadius: 8,
                       background: "rgba(0,0,0,.06)",
                       userSelect: "all",
-                      fontSize: "15px", // ⬅️ agrandis ici (ex: 16–20px)
+                      fontSize: "15px",
                       lineHeight: 1.25,
                       letterSpacing: "0.2px",
-                      wordBreak: "break-all", // ⬅️ évite tout débordement
+                      wordBreak: "break-all",
                     }}
                   >
                     kaspa:qrdc534sgr3ng96dmkcxnsz5c827g2s7mecpqvmlrkfuunnsu9tnjkv5q8emd
@@ -764,16 +766,16 @@ export default function App() {
           </section>
         </main>
 
-        {/* STEP 3 — PREVIEW + PRINT (rail vertical + bouton latéral) */}
+        {/* STEP 3 — PREVIEW + PRINT (vertical rail + side print button) */}
         <section className="col col-right">
           <section className="step-card step3">
-            {/* Rail vertical gauche : titre tourné */}
+            {/* Left vertical rail: rotated title */}
             <div className="step-head">
               <span className="step-kicker">STEP 3</span>
-              <h2 className="step-title">Aperçu final</h2>
+              <h2 className="step-title">Final preview</h2>
             </div>
 
-            {/* Corps : les deux cartes */}
+            {/* Body: the two cards */}
             <div className="step-body">
               <div className={`preview-panel ${address ? "" : "is-empty"}`}>
                 <div className="preview-stage">
@@ -793,7 +795,7 @@ export default function App() {
                             <code className="addr">{address || "…"}</code>
                           </div>
                         </div>
-                        {/* mini-logo sur le volet BACK */}
+                        {/* mini-logo on the BACK panel */}
                         <img
                           src={kaspaLogo2}
                           alt="Kaspa"
@@ -810,7 +812,7 @@ export default function App() {
                           className="pad pad-cover"
                           style={{ gap: "2.5mm", alignItems: "center" }}
                         >
-                          {/* Ligne du nom du wallet (au-dessus) */}
+                          {/* Wallet name line (above) */}
                           {walletName.trim() && (
                             <div
                               className="cover-owner"
@@ -828,7 +830,7 @@ export default function App() {
                             </div>
                           )}
 
-                          {/* Nom composé (TICKER'S WALLET) */}
+                          {/* Composed name (TICKER'S WALLET) */}
                           <div
                             className="cover-name"
                             style={{
@@ -843,7 +845,7 @@ export default function App() {
                             {composedWallet}
                           </div>
 
-                          {/* Image du token (si appliquée) */}
+                          {/* Token image (if applied) */}
                           {tokenImageUrl && (
                             <div
                               className="token-slot"
@@ -872,7 +874,7 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                        {/* mini-logo sur le volet COVER */}
+                        {/* mini-logo on the COVER panel */}
                         <img
                           src={kaspaLogo2}
                           alt="Kaspa"
@@ -920,7 +922,7 @@ export default function App() {
                             </code>
                           </div>
                         </div>
-                        {/* mini-logo sur le volet SECRET-LEFT */}
+                        {/* mini-logo on the SECRET-LEFT panel */}
                         <img
                           src={kaspaLogo2}
                           alt="Kaspa"
@@ -939,7 +941,7 @@ export default function App() {
                           </div>
                           <canvas ref={secQRRef} className="qr-seed" />
                         </div>
-                        {/* mini-logo sur le volet SECRET-RIGHT */}
+                        {/* mini-logo on the SECRET-RIGHT panel */}
                         <img
                           src={kaspaLogo2}
                           alt="Kaspa"
@@ -955,13 +957,13 @@ export default function App() {
               </div>
             </div>
 
-            {/* Rail droit : bouton print à côté des cartes */}
+            {/* Right rail: print button next to the cards */}
             <div className="step-side-print">
               <button
                 className="ghost"
                 onClick={() => window.print()}
                 disabled={!address}
-                title={address ? "Imprimer" : "Génère d’abord la carte"}
+                title={address ? "Print" : "Generate the card first"}
               >
                 Print
               </button>
@@ -970,7 +972,7 @@ export default function App() {
         </section>
       </div>
 
-      {/* Canvas des traits jaunes (affiché seulement pendant l’entropie) */}
+      {/* Yellow trail canvas (only visible during entropy collection) */}
       <canvas
         ref={trailCanvasRef}
         className="noprint"
