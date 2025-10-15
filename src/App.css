@@ -1,11 +1,10 @@
 /* =========================================================================
-   PaperMarty — Kaspa Paper Wallet (Folded Card)
-   ========================================================================= */
+    PaperMarty — Kaspa Paper Wallet (Folded Card)
+    ========================================================================= */
 
 /* -------------------------------------------------------------------------
-   TOKENS (EDIT THESE)
- 
-   ------------------------------------------------------------------------- */
+    TOKENS
+    ------------------------------------------------------------------------- */
 
 @import url("https://fonts.googleapis.com/css2?family=Rubik:wght@700;800&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap");
@@ -34,7 +33,6 @@
   /* Typography */
   --title-font: "Lato", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
-
   --title-size: 44px;
   --title-weight: 700;
   --title-by-gap: 6px;
@@ -46,23 +44,24 @@
   --social-icon: 32px;
   --social-hit: 8px;
 
-  /* Grid 3 colonnes */
+  /* 3 column grid */
   --col-min: 320px;
   --col-gap: 24px;
 
-  /* Hauteur zone principale (réserve pour footer, etc.) */
+  /* Heights */
   --masthead-approx: 84px;
-  --footer-reserve: 120px; /* ajuste pour laisser +/– de place au footer */
-  --cards-extra-h: 40px; /* bonus de hauteur si besoin */
-  --step-pad-y: 20px; /* padding vertical des cartes */
+  --footer-reserve: 120px;
+  --cards-extra-h: 40px;
+  --step-pad-y: 20px;
 
   /* STEP 3 preview */
   --preview-gap: 10px;
-  --preview-scale: 1.06; /* ←← MODIFIE ICI pour la TAILLE des 2 cartes */
+  --preview-scale: 1.06;
 
-  /* STEP 3 rails */
+  /* STEP rails */
   --step3-rail-w: 44px;
   --step3-print-w: 60px;
+  --step-rail-w: 44px; /* STEP 1 & 2 rail */
 
   /* Card sheet geometry (print) */
   --CARD_W: 53.98mm;
@@ -74,7 +73,7 @@
   --QR_SEED: 42mm;
 }
 
-/* Responsive tweaks */
+/* Responsive tokens */
 @media (max-width: 680px) {
   :root {
     --title-size: 30px;
@@ -89,21 +88,24 @@
 }
 
 /* -------------------------------------------------------------------------
-   Base
-   ------------------------------------------------------------------------- */
+    Base
+    ------------------------------------------------------------------------- */
 * {
   box-sizing: border-box;
 }
+
 html,
 body,
 #root,
 .app {
   height: 100%;
 }
+
 html,
 body {
   overflow: hidden;
-} /* pas de scroll page */
+} /* no page scroll (desktop) */
+
 body {
   margin: 0;
   background: var(--bg);
@@ -161,8 +163,8 @@ button.ghost {
 }
 
 /* -------------------------------------------------------------------------
-   Masthead (inline)
-   ------------------------------------------------------------------------- */
+    Masthead (inline)
+    ------------------------------------------------------------------------- */
 .masthead {
   padding: var(--header-pad-y) var(--header-pad-x);
   margin-bottom: var(--header-mb);
@@ -183,12 +185,14 @@ button.ghost {
   justify-content: flex-end;
   gap: var(--social-gap);
 }
+
 .site-logo {
   width: var(--logo-size);
   height: var(--logo-size);
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
 }
+
 .masthead__center {
   position: absolute;
   left: 50%;
@@ -196,12 +200,14 @@ button.ghost {
   text-align: center;
   max-width: var(--center-maxw);
 }
+
 .title-line {
   display: inline-flex;
   align-items: baseline;
   gap: var(--title-by-gap);
   white-space: nowrap;
 }
+
 .site-title {
   margin: 0;
   font-family: var(--title-font);
@@ -227,6 +233,8 @@ button.ghost {
   object-fit: contain;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.1));
 }
+
+/* Socials */
 .social-btn {
   --hit: var(--social-hit);
   display: inline-grid;
@@ -253,18 +261,34 @@ button.ghost {
 .social-btn:focus-visible {
   box-shadow: 0 0 0 2px rgba(8, 48, 43, 0.35);
 }
-.social-btn svg {
+/* ✅ New (fixes the Website <img> icon) */
+.social-btn svg,
+.social-btn img {
   width: var(--social-icon);
   height: var(--social-icon);
   display: block;
+  object-fit: contain;
 }
 .social-btn svg path {
   fill: currentColor;
 }
 
+/* Small detail: prevent vertical shift */
+.social-btn {
+  line-height: 0;
+}
+
+/* Masthead title uses Rubik (without touching step titles) */
+.masthead .site-title {
+  font-family: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif !important;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 /* -------------------------------------------------------------------------
-   3-COLUMN LAYOUT
-   ------------------------------------------------------------------------- */
+    3-COLUMN LAYOUT
+    ------------------------------------------------------------------------- */
 .layout3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(var(--col-min), 1fr));
@@ -280,6 +304,7 @@ button.ghost {
   display: flex;
   overflow: hidden;
 }
+
 .step-card {
   position: relative;
   flex: 1;
@@ -327,7 +352,7 @@ button.ghost {
   overflow: auto;
 }
 
-/* STEP 3 rail vertical + bouton print */
+/* STEP 3 vertical rail + print button */
 .step-card.step3 {
   display: grid;
   grid-template-columns: var(--step3-rail-w) 1fr var(--step3-print-w);
@@ -365,17 +390,15 @@ button.ghost {
   padding-left: 6px;
 }
 .step-card.step3 .step-side-print .ghost {
-  writing-mode: horizontal-tb;
-  transform: none;
   padding: 10px 14px;
 }
 
 /* -------------------------------------------------------------------------
-   STEP 3 PREVIEW (scale unique via --preview-scale)
-   ------------------------------------------------------------------------- */
+    STEP 3 PREVIEW (unique scale via --preview-scale)
+    ------------------------------------------------------------------------- */
 .preview-panel .sheet.card-sheet {
   margin: 0;
-} /* pas d'espace parasite */
+}
 .preview-stage {
   display: grid;
   gap: var(--preview-gap);
@@ -383,9 +406,7 @@ button.ghost {
   align-content: start;
 }
 .preview-sheet {
-  height: calc(
-    var(--SHEET_H) * var(--preview-scale)
-  ); /* réserve la bonne hauteur */
+  height: calc(var(--SHEET_H) * var(--preview-scale));
   display: grid;
   place-items: center;
 }
@@ -395,8 +416,8 @@ button.ghost {
 }
 
 /* -------------------------------------------------------------------------
-   OPEN SHEET (printable cards)
-   ------------------------------------------------------------------------- */
+    OPEN SHEET (printable cards)
+    ------------------------------------------------------------------------- */
 .sheet.card-sheet {
   position: relative;
   width: var(--SHEET_W);
@@ -435,6 +456,7 @@ button.ghost {
 .sheet .pad > * {
   max-width: 100%;
 }
+
 .fold-line {
   position: absolute;
   left: calc(50% - 0.25mm);
@@ -451,6 +473,7 @@ button.ghost {
   opacity: 0.7;
   pointer-events: none;
 }
+
 .pad-cover {
   justify-content: center;
 }
@@ -465,6 +488,7 @@ button.ghost {
 .cover .logo span {
   color: #2a6df4;
 }
+
 .pad-back {
   justify-content: center;
   align-items: center;
@@ -500,9 +524,11 @@ button.ghost {
   color: var(--danger);
   font-weight: 800;
 }
+
 .info {
   width: 100%;
 }
+
 .mono {
   display: block;
   white-space: normal;
@@ -519,12 +545,14 @@ button.ghost {
   max-height: none !important;
   overflow: visible !important;
 }
+
 .pad-secret {
   justify-content: flex-start;
   align-items: stretch;
   gap: 2mm;
   padding-top: 2mm;
 }
+
 .qr-seed {
   display: block;
   width: var(--QR_SEED);
@@ -538,8 +566,8 @@ button.ghost {
 }
 
 /* -------------------------------------------------------------------------
-   ENTROPY OVERLAY
-   ------------------------------------------------------------------------- */
+    ENTROPY OVERLAY
+    ------------------------------------------------------------------------- */
 .entropy-overlay {
   position: fixed;
   inset: 0;
@@ -630,13 +658,14 @@ button.ghost {
 }
 
 /* -------------------------------------------------------------------------
-   PRINT (A4 duplex short-edge flip)
-   ------------------------------------------------------------------------- */
+    PRINT (A4 duplex short-edge flip)
+    ------------------------------------------------------------------------- */
 @media print {
   @page {
     size: A4;
     margin: 10mm;
   }
+
   html,
   body {
     background: #fff;
@@ -644,10 +673,13 @@ button.ghost {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
   .noprint,
-  .entropy-overlay {
+  .entropy-overlay,
+  .step-side-print {
     display: none !important;
   }
+
   .sheet.card-sheet {
     margin: 0 auto;
     width: var(--SHEET_W) !important;
@@ -658,6 +690,7 @@ button.ghost {
   .sheet.card-sheet + .sheet.card-sheet {
     page-break-before: always;
   }
+
   .pad-secret {
     padding-top: 1.5mm;
   }
@@ -680,11 +713,10 @@ button.ghost {
     height: auto !important;
   }
 }
-/* ===== STEP 1 & STEP 2 : rail vertical à gauche (90°) ===== */
-:root {
-  --step-rail-w: 44px;
-} /* largeur du rail (tu peux mettre 38–54px) */
 
+/* -------------------------------------------------------------------------
+    STEP 1 & STEP 2 — vertical rail (same direction as STEP 3)
+    ------------------------------------------------------------------------- */
 .step-card.step1,
 .step-card.step2 {
   display: grid;
@@ -693,65 +725,37 @@ button.ghost {
   gap: 0;
   align-items: stretch;
 }
-
 .step-card.step1 .step-head,
 .step-card.step2 .step-head {
   grid-area: rail;
-  writing-mode: vertical-lr; /* 90° lisible de haut → bas */
+  writing-mode: vertical-rl; /* bottom → top, legible letters */
+  transform: rotate(180deg);
   text-orientation: mixed;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 6px;
-  margin: 0; /* on enlève la marge basse standard */
+  margin: 0;
 }
-
-/* Si tu préfères l’autre sens (bas → haut), remplace ci-dessus par :
-   writing-mode: vertical-rl; transform: rotate(180deg);  */
-
 .step-card.step1 .step-body,
 .step-card.step2 .step-body {
   grid-area: body;
-  overflow: hidden; /* pas de scroll visible */
+  overflow: hidden;
   padding: 0 8px;
 }
-
-/* Taille/rythme du libellé vertical */
-.step-card.step1 .step-kicker,
-.step-card.step2 .step-kicker {
-  font-size: 12px;
-  padding: 4px 6px;
-}
-
-.step-card.step1 .step-title,
-.step-card.step2 .step-title {
-  font-size: 16px;
-}
-/* STEP 1 & STEP 2 — même sens que STEP 3 (bas → haut, lettres lisibles) */
-.step-card.step1 .step-head,
-.step-card.step2 .step-head {
-  writing-mode: vertical-rl; /* comme STEP 3 */
-  transform: rotate(180deg); /* retourne le flux pour lire de bas → haut */
-  text-orientation: mixed;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-}
-
-/* (optionnel) tailles du libellé vertical pour l’harmonie avec STEP 3 */
 .step-card.step1 .step-kicker,
 .step-card.step2 .step-kicker {
   font-size: 14px;
   padding: 4px 6px;
 }
-
 .step-card.step1 .step-title,
 .step-card.step2 .step-title {
   font-size: 16px;
 }
-/* === Entropy Cursor (halo) ========================================= */
+
+/* -------------------------------------------------------------------------
+    Entropy Cursor (halo)
+    ------------------------------------------------------------------------- */
 .entropy-cursor {
   position: fixed;
   left: var(--x, -100px);
@@ -760,14 +764,14 @@ button.ghost {
   height: 22px;
   border-radius: 50%;
   pointer-events: none;
-  opacity: 0; /* caché par défaut */
+  opacity: 0;
   z-index: 9999;
-  border: 2px solid rgba(34, 216, 162, 0.9); /* vert/teal */
+  border: 2px solid rgba(34, 216, 162, 0.9);
   box-shadow: 0 0 14px rgba(34, 216, 162, 0.6),
-    0 0 30px rgba(42, 109, 244, 0.35); /* léger bleu pour rappeler le thème */
-  transform: translate(-50%, -50%); /* centré sur la souris */
+    0 0 30px rgba(42, 109, 244, 0.35);
+  transform: translate(-50%, -50%);
   transition: opacity 120ms ease;
-  mix-blend-mode: screen; /* joli rendu sur fond teal */
+  mix-blend-mode: screen;
 }
 .entropy-cursor.on {
   opacity: 0.95;
@@ -782,7 +786,6 @@ button.ghost {
   animation: entropySpin 1.6s linear infinite;
   pointer-events: none;
 }
-
 @keyframes entropyPulse {
   from {
     transform: translate(-50%, -50%) scale(0.9);
@@ -796,96 +799,67 @@ button.ghost {
     transform: rotate(360deg);
   }
 }
-/* Masthead title uses Rubik (without touching step titles) */
-.masthead .site-title {
-  font-family: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif !important;
-  font-weight: 800; /* 700 ou 800 selon le rendu que tu préfères */
-  letter-spacing: 0.02em; /* optionnel, un poil + serré */
-}
-/* =======================
-   MOBILE: stack 3 steps
-   ======================= */
-@media (max-width: 900px) {
-  /* Autoriser le scroll en mobile */
-  html,
-  body,
-  #root,
-  .app {
-    height: auto;
-    min-height: 100%;
-  }
-  body {
-    overflow: auto; /* on annule le overflow:hidden global */
-  }
 
-  /* 3 colonnes -> 1 colonne */
-  .layout3 {
-    grid-template-columns: 1fr;
-    height: auto; /* plus de hauteur fixe liée au viewport */
-    gap: 16px; /* un peu d’air entre les cards */
+/* -------------------------------------------------------------------------
+    Donate: gentle zoom loop (accessibility-friendly)
+    ------------------------------------------------------------------------- */
+@keyframes donate-pulse {
+  0% {
+    transform: scale(1);
   }
-
-  /* Les contenus des steps peuvent grandir naturellement */
-  .step-card .step-body {
-    overflow: visible; /* pas de scroll interne en mobile */
+  50% {
+    transform: scale(1.15);
   }
-
-  /* STEP 3 : on garde le rail à gauche,
-     et on place le bouton Print en dessous pour éviter l’écrasement */
-  .step-card.step3 {
-    grid-template-columns: var(--step3-rail-w) 1fr;
-    grid-template-areas:
-      "rail body"
-      "print print";
-  }
-  .step-card.step3 .step-side-print {
-    padding: 8px 0 0;
-    place-items: center;
-  }
-
-  /* Optionnel : réduire un poil les marges horizontales internes en mobile */
-  .step-card.step3 .step-body,
-  .step-card.step1 .step-body,
-  .step-card.step2 .step-body {
-    padding-left: 6px;
-    padding-right: 6px;
+  100% {
+    transform: scale(1);
   }
 }
-/* ==============================
-   MOBILE: scroll + stack (fix)
-   ============================== */
+.donate-title {
+  display: inline-block;
+  transform-origin: center;
+  animation: donate-pulse 1.2s ease-in-out infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .donate-title {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+    MOBILE (≤ 900px) — scroll OK + stack of 3 steps + clean masthead
+    ------------------------------------------------------------------------- */
 @media (max-width: 900px) {
-  /* Débloquer le scroll */
+  /* Unlock main scroll (single scrollbar) */
   html,
   body {
     height: auto !important;
-    min-height: 100vh;
+    min-height: 100vh !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch; /* inertie iOS */
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
-
-  /* Ne pas forcer 100% de hauteur côté app */
   #root,
   .app {
     height: auto !important;
     min-height: 100%;
   }
 
-  /* 3 colonnes -> 1 colonne + hauteur auto */
+  /* 3 columns -> 1 column */
   .layout3 {
     grid-template-columns: 1fr;
     height: auto !important;
     gap: 16px;
   }
 
-  /* Pas de scroll interne aux cards en mobile */
+  /* No sub-scroll in cards */
+  .col,
   .step-card .step-body {
     overflow: visible !important;
   }
 
-  /* STEP 3 : bouton Print passe sous l’aperçu (plus d’écrasement latéral) */
+  /* STEP 3 : Print button below the preview */
   .step-card.step3 {
     grid-template-columns: var(--step3-rail-w) 1fr;
     grid-template-areas:
@@ -896,87 +870,11 @@ button.ghost {
     padding: 8px 0 0;
     place-items: center;
   }
-}
-/* ===== Fix molette souris en mode mobile + stacking ===== */
-@media (max-width: 900px) {
-  /* Le body devient bien le conteneur scrollable */
-  html,
-  body {
-    height: auto !important;
-    min-height: 100vh;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-  }
 
-  /* Ces wrappers ne doivent pas enfermer le scroll */
-  #root,
-  .app {
-    height: auto !important;
-    min-height: 100%;
-  }
-
-  /* Empiler les 3 steps + laisser la hauteur se calculer */
-  .layout3 {
-    grid-template-columns: 1fr;
-    height: auto !important;
-  }
-
-  /* 🔑 Important : ne pas couper la molette sur les colonnes/step */
-  .col {
-    overflow: visible !important;
-  }
-  .step-card .step-body {
-    overflow: visible !important;
-  }
-
-  /* Optionnel: STEP 3, bouton Print en-dessous pour éviter les chevauchements */
-  .step-card.step3 {
-    grid-template-columns: var(--step3-rail-w) 1fr;
-    grid-template-areas:
-      "rail body"
-      "print print";
-  }
-  .step-card.step3 .step-side-print {
-    padding-top: 8px;
-  }
-}
-/* ==============================
-   MOBILE: forcer le scroll molette
-   ============================== */
-@media (max-width: 900px) {
-  /* Le body redevient l'unique conteneur scrollable */
-  html,
-  body {
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow-y: scroll !important; /* ← force un conteneur de scroll (molette OK) */
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Rien d'autre ne doit confisquer le scroll */
-  #root,
-  .app,
-  .layout3,
-  .col {
-    height: auto !important;
-    overflow: visible !important; /* ← évite de “manger” les events wheel */
-  }
-
-  /* Le contenu interne des steps ne crée pas de sous-scroll */
-  .step-card .step-body {
-    overflow: visible !important;
-  }
-}
-/* =========================
-   MOBILE masthead: no overlap
-   ========================= */
-@media (max-width: 900px) {
+  /* Compact masthead, no overlap */
   .masthead {
     padding: 8px 16px;
   }
-
-  /* Turn the header into a simple grid with title on its own row */
   .masthead__inner {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -986,7 +884,6 @@ button.ghost {
       "title title";
     gap: 8px;
   }
-
   .masthead__left {
     grid-area: logo;
   }
@@ -996,20 +893,18 @@ button.ghost {
   }
   .masthead__center {
     grid-area: title;
-    position: static !important; /* stop overlapping */
+    position: static !important;
     transform: none !important;
     max-width: 100%;
     text-align: center;
   }
-
-  /* Let the title and byline wrap nicely */
   .title-line {
-    white-space: normal; /* was nowrap */
+    white-space: normal;
     flex-wrap: wrap;
     justify-content: center;
   }
 
-  /* Make elements smaller on mobile */
+  /* Reduced sizes on mobile */
   .site-logo {
     width: 56px;
     height: 56px;
@@ -1030,32 +925,5 @@ button.ghost {
   .social-btn svg {
     width: 20px;
     height: 20px;
-  }
-}
-/* ===== Mobile: 1 seule barre de scroll (sur <html>) ===== */
-@media (max-width: 900px) {
-  /* Le viewport (html) gère le scroll */
-  html {
-    overflow-y: auto;
-    height: auto !important;
-  }
-
-  /* Le body ne scrolle pas */
-  body {
-    overflow: visible !important;
-    height: auto !important;
-  }
-
-  /* Empêcher tout scroll imbriqué */
-  #root,
-  .app,
-  .layout3,
-  .col,
-  .step-card,
-  .step-body,
-  .preview-panel,
-  .preview-stage {
-    height: auto !important;
-    overflow: visible !important;
   }
 }

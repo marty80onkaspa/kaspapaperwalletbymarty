@@ -8,6 +8,7 @@ import kaspaLogo from "./assets/kaspa-logo.webp";
 import martyMark from "./assets/marty.webp";
 import kaspaLogo2 from "./assets/kaspa-logo2.webp"; // mini-logo for the panels
 import donateImg from "./assets/donate.webp";
+import websiteIcon from "./assets/website.webp";
 
 /** Draw a QR (fixed bitmap, clear before rendering) */
 async function drawQR(canvas, text, px = 520) {
@@ -455,6 +456,16 @@ export default function App() {
                 <path d="M18.9 2H22l-7.03 8.03L23.5 22h-6.9l-5.4-7.06L4.9 22H2l7.5-8.57L.5 2h6.9l4.88 6.38L18.9 2Zm-2.42 18h2.29L7.64 4h-2.3l11.14 16Z" />
               </svg>
             </a>
+            <a
+              className="social-btn"
+              href="https://marty80.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Website"
+              title="Website"
+            >
+              <img src={websiteIcon} alt="Website" />
+            </a>
           </nav>
         </div>
       </div>
@@ -715,7 +726,7 @@ export default function App() {
                   }}
                 >
                   <div
-                    className="muted"
+                    className="muted donate-title"
                     style={{
                       fontWeight: 900,
                       textTransform: "uppercase",
