@@ -1,6 +1,3 @@
-// src/App.jsx
-// UI + wallet generation. Header is now inlined at the top of the page.
-
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import QRCode from "qrcode";
 import "./App.css";
