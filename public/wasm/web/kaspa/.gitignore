@@ -1,0 +1,5 @@
+# Track the wasm runtime files in this folder
+*
+!.gitignore
+!kaspa.js
+!kaspa_bg.wasm
