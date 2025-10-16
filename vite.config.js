@@ -7,7 +7,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      workbox: { globPatterns: ["**/*"] },
+      workbox: {
+        // Ne précache pas les fichiers lourds copiés depuis public/wasm/*
+        globIgnores: ["**/wasm/**", "**/*.map"],
+        // Ne précache que les types d’assets utiles
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp}"],
+        // (optionnel) pour relever la limite si tu en as besoin :
+        // maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+      },
       manifest: {
         name: "PaperMarty",
         short_name: "PaperMarty",

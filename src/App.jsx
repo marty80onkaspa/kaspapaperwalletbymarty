@@ -7,7 +7,7 @@ import kaspaLogo2 from "./assets/kaspa-logo2.webp"; // mini-logo for the panels
 import donateImg from "./assets/donate.webp";
 import websiteIcon from "./assets/website.webp";
 
-/** Draw a QR (fixed bitmap, clear before rendering) */
+/** Draw a QR (fixed bitmap,clear before rendering) */
 async function drawQR(canvas, text, px = 520) {
   if (!canvas || !text) return;
   if (canvas.width !== px) canvas.width = px;
