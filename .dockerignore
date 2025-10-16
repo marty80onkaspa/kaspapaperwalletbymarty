@@ -2,6 +2,5 @@ node_modules
 .git
 .gitignore
 *.log
+*.map
 dist
-Dockerfile
-nginx.conf
