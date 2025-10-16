@@ -1,5 +1,4 @@
-# Track the wasm runtime files in this folder
+# Track EVERYTHING in this folder (override any previous wildcard)
 *
-!.gitignore
-!kaspa.js
-!kaspa_bg.wasm
+!*/
+!*

@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Ensure the wasm runtime stays tracked
+# Ensure the entire wasm folder is tracked
+!public/wasm/
 !public/wasm/**
