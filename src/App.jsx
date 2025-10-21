@@ -455,7 +455,7 @@ export default function App() {
             </a>
             <a
               className="social-btn"
-              href="https://marty80.com"
+              href="https://marty80.top"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Website"
